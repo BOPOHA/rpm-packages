@@ -1,0 +1,15 @@
+============================ rpmlint session starts ============================
+rpmlint: 2.8.0
+configuration:
+    /usr/lib/python3.14/site-packages/rpmlint/configdefaults.toml
+    /etc/xdg/rpmlint/fedora-legacy-licenses.toml
+    /etc/xdg/rpmlint/fedora-spdx-licenses.toml
+    /etc/xdg/rpmlint/fedora.toml
+    /etc/xdg/rpmlint/scoring.toml
+    /etc/xdg/rpmlint/users-groups.toml
+    /etc/xdg/rpmlint/warn-on-functions.toml
+    rpmlint.toml
+checks: 32, packages: 1
+
+freelens.x86_64: W: binary-or-shlib-calls-gethostbyname /usr/lib64/freelens/freelens
+ 1 packages and 0 specfiles checked; 0 errors, 1 warnings, 12 filtered, 0 badness; has taken 16.1 s 
