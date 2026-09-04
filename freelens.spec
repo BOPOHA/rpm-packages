@@ -80,10 +80,14 @@ done
 
 # Keep license files marked as licenses without listing them twice through the
 # recursively installed application directory.
-find %{buildroot}%{_libdir}/freelens -mindepth 1 \
-    ! -path '%{buildroot}%{_libdir}/freelens/LICENSE.electron.txt' \
-    ! -path '%{buildroot}%{_libdir}/freelens/LICENSES.chromium.html' \
-    -printf '%{_libdir}/freelens/%%P\n' > %{_builddir}/freelens.files
+(
+    find %{buildroot}%{_libdir}/freelens -mindepth 1 -type d \
+        -printf '%%dir %{_libdir}/freelens/%%P\n'
+    find %{buildroot}%{_libdir}/freelens -mindepth 1 \( -type f -o -type l \) \
+        ! -path '%{buildroot}%{_libdir}/freelens/LICENSE.electron.txt' \
+        ! -path '%{buildroot}%{_libdir}/freelens/LICENSES.chromium.html' \
+        -printf '%{_libdir}/freelens/%%P\n'
+) > %{_builddir}/freelens.files
 
 %check
 test -x %{buildroot}%{_libdir}/freelens/freelens
