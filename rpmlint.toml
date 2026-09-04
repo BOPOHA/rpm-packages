@@ -2,8 +2,8 @@
 # are required by Freelens at runtime and cannot be rebuilt from this source
 # package.  Keep every filter restricted to the affected file(s).
 Filters = [
-  'freelens\.\S+: E: statically-linked-binary /usr/lib64/freelens/resources/x64/(freelens-k8s-proxy|helm|kubectl)$',
-  'freelens\.\S+: W: position-independent-executable-suggested /usr/lib64/freelens/resources/x64/(freelens-k8s-proxy|helm|kubectl)$',
-  'freelens\.\S+: E: missing-call-to-setgroups-before-setuid /usr/lib64/freelens/chrome-sandbox$',
-  'freelens\.\S+: E: missing-call-to-setgroups-before-setuid /usr/lib64/freelens/resources/app\.asar\.unpacked/node_modules/node-pty/(bin/linux-x64-[^/]+/node-pty\.node|prebuilds/linux-x64/pty\.node)$',
+  'freelens(-bundled|-native)?\.\S+: E: statically-linked-binary /usr/lib64/freelens/resources/x64/(freelens-k8s-proxy|helm|kubectl)$',
+  'freelens(-bundled|-native)?\.\S+: W: position-independent-executable-suggested /usr/lib64/freelens/resources/x64/(freelens-k8s-proxy|helm|kubectl)$',
+  'freelens(-bundled|-native)?\.\S+: E: missing-call-to-setgroups-before-setuid /usr/lib64/freelens/chrome-sandbox$',
+  'freelens(-bundled|-native)?\.\S+: E: missing-call-to-setgroups-before-setuid /usr/lib64/freelens/resources/app\.asar\.unpacked/node_modules/node-pty/(bin/linux-x64-[^/]+/node-pty\.node|prebuilds/linux-x64/pty\.node)$',
 ]

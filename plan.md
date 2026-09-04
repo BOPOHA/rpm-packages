@@ -15,8 +15,8 @@ Maintain two mutually exclusive RPM variants from the same source and release:
   executables, apart from low-risk cleanup already proven safe. It is the
   fallback and the package to use when upstream-version compatibility matters.
 - `freelens-native` is the Fedora-native package. It uses system or separately
-  built RPM components wherever practical, beginning with Vulkan and then the
-  Kubernetes helpers, native Node modules, and Electron itself.
+  built RPM components wherever practical, beginning with a compatible Electron
+  runtime and then the Kubernetes helpers and native Node modules.
 
 They must not be co-installable: both own the `freelens` command, desktop ID,
 configuration location, and application data. `freelens-bundled` provides the
@@ -24,9 +24,9 @@ unqualified `freelens` capability and obsoletes older unqualified packages so
 that RPM-installed GitHub releases migrate transactionally. Both variants
 declare reciprocal `Conflicts:` by their exact package names.
 
-Use explicit build targets such as `make fc-bundled` and `make fc-native`, each
-producing a distinct SRPM/binary RPM and rpmlint report. Do not call the native
-variant equivalent until its phase-specific tests pass.
+Use explicit build targets such as `make fc-bundled` and, once its spec exists,
+`make fc-native`, each producing a distinct SRPM/binary RPM and rpmlint report.
+Do not call the native variant equivalent until its phase-specific tests pass.
 
 ## Phase 1: low-risk cleanup — implemented
 
@@ -40,20 +40,31 @@ variant equivalent until its phase-specific tests pass.
 Validation: run `make fc`, install the RPM in a test environment, and start
 Freelens with both GPU acceleration and `--disable-gpu` to verify startup.
 
-## Phase 2: Kubernetes helper packages
+## Phase 2: Fedora Electron runtime — current priority
 
-- Package `freelens-k8s-proxy` from source as its own RPM.
-- Evaluate Fedora `kubectl` and Helm packages against Freelens' pinned
-  compatibility expectations.
-- Patch the native variant or supply controlled resource-path symlinks only
-  after proving its supported operations work with system tools. Keep the
-  bundled variant's pinned resources unchanged.
+- Fedora 44 currently has no `electron` or `electron-devel` package in the
+  enabled repositories, while Freelens 1.10.3 requires Electron 41.10.0.
+- Determine whether a maintained Fedora/COPR Electron 41 build exists. If not,
+  prototype a source-built Electron RPM with the required Chromium toolchain,
+  then assess Freelens against that runtime.
+- Do not substitute individual Chromium private libraries; the native variant
+  must use a whole compatible system Electron runtime.
+
+Validation: reproducible Electron RPM build, then Freelens startup under that
+runtime with GPU, software rendering, Wayland/X11, terminal, and extensions.
+
+## Phase 3: Kubernetes helper packages — deferred
+
+- Build `freelens-k8s-proxy` from source inside `freelens-native`.
+- Use Fedora Helm 4.2.2 and Kubernetes 1.36 client packages via controlled
+  resource-path symlinks in `freelens-native`. Keep the bundled variant's
+  pinned resources unchanged.
 
 Validation: cluster connection, kubectl operations, Helm repository/chart/
 release operations, and proxy-backed features against supported Kubernetes
 versions.
 
-## Phase 3: native Node add-ons
+## Phase 4: native Node add-ons
 
 - Build `node-pty` and `@electron-internal/extract-zip` from source for the
   Electron ABI used by the native variant.
@@ -62,20 +73,18 @@ versions.
 Validation: terminal/exec sessions, archive extraction, and a clean rebuild in
 Mock for every supported architecture.
 
-## Phase 4: Electron runtime transition
+## Phase 5: native variant integration
 
-- Determine whether the Fedora Electron version can support Freelens' required
-  Electron/Node APIs and Chromium behavior.
-- Patch only the native build to use the system Electron and its compatible
-  library set; do not substitute individual Chromium private libraries
-  piecemeal.
+- Patch the native build to use the validated system Electron runtime and its
+  compatible library set; do not substitute individual Chromium private
+  libraries piecemeal.
 - Remove the upstream Electron ZIP and its bundled Chromium graphics/codec
   libraries from the native RPM only after the system-Electron build is proven.
 
 Validation: full UI smoke test, GPU and software rendering, Wayland/X11,
 terminal support, extensions, and update the RPM dependency/provides policy.
 
-## Phase 5: maintenance policy
+## Phase 6: maintenance policy
 
 - Keep every remaining external artifact source-versioned and independently
   verifiable.

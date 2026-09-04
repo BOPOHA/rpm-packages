@@ -8,7 +8,7 @@ RPM := rpm-results/$(PACKAGE_NAME)-$(RPM_VERSION).x86_64.rpm
 RPMLINT_CONFIG := rpmlint.toml
 RPMLINT_REPORT := rpmlint.report.txt
 
-.PHONY: srpm fc rpmlint clean
+.PHONY: srpm fc fc-bundled rpmlint clean
 
 srpm:
 	rm -rf $(PROJECTTMPDIR)
@@ -20,6 +20,8 @@ srpm:
 fc: srpm
 	mock --no-clean --enable-network -r fedora-$(FEDORA_VERSION)-x86_64 --resultdir=rpm-results $(PROJECTTMPDIR)/$(PACKAGE_NAME)-$(RPM_VERSION).src.rpm
 	$(MAKE) rpmlint
+
+fc-bundled: fc
 
 rpmlint:
 	rpmlint --config $(RPMLINT_CONFIG) $(RPM) > $(RPMLINT_REPORT)
