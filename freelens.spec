@@ -22,6 +22,7 @@ AutoReqProv:    no
 ExclusiveArch:  x86_64 aarch64
 BuildRequires:  cpio
 BuildRequires:  nodejs >= 24
+BuildRequires:  npm
 BuildRequires:  rpm
 Requires:       alsa-lib
 Requires:       at-spi2-core
@@ -41,8 +42,11 @@ Helm, and Freelens Kubernetes proxy binaries.
 
 %build
 cd freelens-%{upstream_version}
-npm install --global corepack@0.34.0
-corepack enable pnpm
+# Mock builds as the unprivileged mockbuild user. Install Corepack locally
+# rather than into npm's root-owned global prefix, then expose its pnpm shim.
+npm install --ignore-scripts --no-audit --no-fund --prefix .build-tools corepack@0.34.0
+node .build-tools/node_modules/corepack/dist/corepack.js enable --install-directory "$PWD/.build-tools/bin"
+export PATH="$PWD/.build-tools/bin:$PATH"
 pnpm install --frozen-lockfile
 pnpm build:di
 pnpm build

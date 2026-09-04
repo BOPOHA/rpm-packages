@@ -20,8 +20,8 @@ make fc
 Mock chroot. Its results are written to `rpm-results/`. The upstream GitHub
 source archive is downloaded as an SRPM source file; Mock then resolves the
 lockfile and builds the Electron application. Fedora's Node package does not
-ship Corepack, so the build installs the pinned Corepack launcher before pnpm
-selects the repository-pinned pnpm release.
+ship Corepack, so the build installs a pinned Corepack launcher locally in the
+build directory before pnpm selects the repository-pinned pnpm release.
 
 Create only the source RPM with:
 
