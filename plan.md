@@ -44,9 +44,12 @@ Freelens with both GPU acceleration and `--disable-gpu` to verify startup.
 
 - Fedora 44 currently has no `electron` or `electron-devel` package in the
   enabled repositories, while Freelens 1.10.3 requires Electron 41.10.0.
-- Determine whether a maintained Fedora/COPR Electron 41 build exists. If not,
-  prototype a source-built Electron RPM with the required Chromium toolchain,
-  then assess Freelens against that runtime.
+- The `electron41.spec` bootstrap provides parallel-installable `electron41`
+  and `electron41-devel` packages. It pins Electron and depot_tools, while
+  gclient synchronizes Electron's pinned Chromium DEPS at build time.
+- Audit Electron's generated Chromium third-party notice before publication;
+  the initial aggregate license expression deliberately does not claim the
+  runtime is MIT-only.
 - Do not substitute individual Chromium private libraries; the native variant
   must use a whole compatible system Electron runtime.
 
