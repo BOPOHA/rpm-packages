@@ -19,9 +19,10 @@ Maintain two mutually exclusive RPM variants from the same source and release:
   Kubernetes helpers, native Node modules, and Electron itself.
 
 They must not be co-installable: both own the `freelens` command, desktop ID,
-configuration location, and application data. Each variant should `Provides:
-freelens`, and declare reciprocal `Conflicts:` (with a deliberate upgrade path
-using `Obsoletes:` only if the current unqualified package name is retired).
+configuration location, and application data. `freelens-bundled` provides the
+unqualified `freelens` capability and obsoletes older unqualified packages so
+that RPM-installed GitHub releases migrate transactionally. Both variants
+declare reciprocal `Conflicts:` by their exact package names.
 
 Use explicit build targets such as `make fc-bundled` and `make fc-native`, each
 producing a distinct SRPM/binary RPM and rpmlint report. Do not call the native

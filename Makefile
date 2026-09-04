@@ -1,9 +1,10 @@
 PROJECTNAME := $(notdir $(CURDIR))
+PACKAGE_NAME := freelens-bundled
 SPEC := freelens.spec
 PROJECTTMPDIR := /tmp/$(PROJECTNAME)
 RPM_VERSION := $(shell rpmspec -q --srpm --qf '%{Version}-%{Release}' $(SPEC))
 FEDORA_VERSION := $(shell rpm -E %fedora)
-RPM := rpm-results/freelens-$(RPM_VERSION).x86_64.rpm
+RPM := rpm-results/$(PACKAGE_NAME)-$(RPM_VERSION).x86_64.rpm
 RPMLINT_CONFIG := rpmlint.toml
 RPMLINT_REPORT := rpmlint.report.txt
 
@@ -14,10 +15,10 @@ srpm:
 	mkdir -p $(PROJECTTMPDIR)
 	spectool --get-files --directory $(PROJECTTMPDIR) $(SPEC)
 	rpkg srpm --spec $(SPEC) --outdir $(PROJECTTMPDIR)
-	@echo "SRPM: $(PROJECTTMPDIR)/freelens-$(RPM_VERSION).src.rpm"
+	@echo "SRPM: $(PROJECTTMPDIR)/$(PACKAGE_NAME)-$(RPM_VERSION).src.rpm"
 
 fc: srpm
-	mock --no-clean --enable-network -r fedora-$(FEDORA_VERSION)-x86_64 --resultdir=rpm-results $(PROJECTTMPDIR)/freelens-$(RPM_VERSION).src.rpm
+	mock --no-clean --enable-network -r fedora-$(FEDORA_VERSION)-x86_64 --resultdir=rpm-results $(PROJECTTMPDIR)/$(PACKAGE_NAME)-$(RPM_VERSION).src.rpm
 	$(MAKE) rpmlint
 
 rpmlint:

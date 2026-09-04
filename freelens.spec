@@ -4,10 +4,10 @@
 %global _build_id_links none
 %global upstream_version 1.10.3
 
-Name:           freelens
+Name:           freelens-bundled
 Version:        %{upstream_version}
-Release:        5%{?dist}
-Summary:        Free IDE for Kubernetes
+Release:        6%{?dist}
+Summary:        Free IDE for Kubernetes with the upstream Electron runtime
 License:        MIT
 URL:            https://freelens.app/
 # rpkg expands Source0 from the committed repository. Source1 is the pinned
@@ -38,11 +38,16 @@ Requires:       libnotify.so.4()(64bit)
 Requires:       nss
 Requires:       libvulkan.so.1()(64bit)
 Requires:       xdg-utils
+# Replace the original GitHub RPM and this repository's pre-variant package
+# without replacing a newer upstream version during a downgrade attempt.
+Provides:       freelens = %{version}-%{release}
+Obsoletes:      freelens < %{version}-%{release}
+Conflicts:      freelens-native
 
 %description
-Freelens is a free and open-source Kubernetes IDE. It provides a graphical
-interface for managing Kubernetes clusters and bundles compatible kubectl,
-Helm, and Freelens Kubernetes proxy binaries.
+Freelens is a free and open-source Kubernetes IDE. This compatibility variant
+uses the upstream Electron runtime and bundles compatible kubectl, Helm, and
+Freelens Kubernetes proxy binaries.
 
 %prep
 %setup -q -n freelens-packages -a 1
@@ -140,6 +145,10 @@ test -f %{buildroot}%{_datadir}/metainfo/app.freelens.Freelens.metainfo.xml
 %{_datadir}/metainfo/app.freelens.Freelens.metainfo.xml
 
 %changelog
+* Fri Sep 04 2026 Anatolii Vorona <vorona.tolik@gmail.com> - 1.10.3-6
+- Rename the compatibility package to freelens-bundled.
+- Replace older unqualified freelens packages and conflict with freelens-native.
+
 * Fri Sep 04 2026 Anatolii Vorona <vorona.tolik@gmail.com> - 1.10.3-5
 - Use Fedora's Vulkan loader and discard non-target native add-ons.
 
