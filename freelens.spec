@@ -44,6 +44,8 @@ Helm, and Freelens Kubernetes proxy binaries.
 cd freelens-%{upstream_version}
 # Mock builds as the unprivileged mockbuild user. Install Corepack locally
 # rather than into npm's root-owned global prefix, then expose its pnpm shim.
+# TODO: replace this temporary bootstrap with a Corepack RPM built in this COPR
+# repository and add it to BuildRequires.
 npm install --ignore-scripts --no-audit --no-fund --prefix .build-tools corepack@0.34.0
 node .build-tools/node_modules/corepack/dist/corepack.js enable --install-directory "$PWD/.build-tools/bin"
 export PATH="$PWD/.build-tools/bin:$PATH"

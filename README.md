@@ -42,3 +42,10 @@ make srpm
 
 The current upstream binary requires glibc 2.34 or newer, so target RHEL 9+
 or Fedora rather than RHEL 8.
+
+## TODO: package Corepack
+
+The native build temporarily installs `corepack@0.34.0` locally with npm because
+Fedora's Node.js package does not ship it. Create a `corepack` RPM in this same
+Freelens COPR repository, then replace that local npm bootstrap with
+`BuildRequires: corepack` in `freelens.spec`.
