@@ -6,7 +6,7 @@
 
 Name:           freelens
 Version:        %{upstream_version}
-Release:        4%{?dist}
+Release:        5%{?dist}
 Summary:        Free IDE for Kubernetes
 License:        MIT
 URL:            https://freelens.app/
@@ -36,6 +36,7 @@ Requires:       gtk3
 Requires:       libXss.so.1()(64bit)
 Requires:       libnotify.so.4()(64bit)
 Requires:       nss
+Requires:       libvulkan.so.1()(64bit)
 Requires:       xdg-utils
 
 %description
@@ -67,12 +68,25 @@ install -d %{buildroot}%{_bindir} %{buildroot}%{_libdir}
 cp -a freelens-%{upstream_version}/freelens/dist/linux-unpacked \
     %{buildroot}%{_libdir}/freelens
 
-# These runtime-loaded native modules are prebuilt by upstream.  Strip their
-# debug sections without changing their executable code or bundled ABI.
+# This runtime-loaded native module is prebuilt by upstream. Strip its debug
+# sections without changing executable code or its bundled ABI.
 %{__strip} --strip-unneeded \
-    %{buildroot}%{_libdir}/freelens/libvulkan.so.1 \
     %{buildroot}%{_libdir}/freelens/resources/app.asar.unpacked/node_modules/node-pty/bin/linux-x64-*/node-pty.node \
     %{buildroot}%{_libdir}/freelens/resources/app.asar.unpacked/node_modules/node-pty/prebuilds/linux-x64/pty.node
+
+# Electron bundles the Vulkan loader, but Fedora supplies the compatible
+# system loader through the explicit libvulkan.so.1 dependency above.
+rm -f %{buildroot}%{_libdir}/freelens/libvulkan.so.1
+
+# electron-builder leaves prebuilt extract-zip add-ons for every platform in
+# app.asar.unpacked. Keep only the glibc build for the target architecture.
+extract_zip_dir=%{buildroot}%{_libdir}/freelens/resources/app.asar.unpacked/node_modules/@electron-internal/extract-zip
+%ifarch x86_64
+find "$extract_zip_dir" -type f -name '*.node' ! -name 'index.linux-x64-gnu.node' -delete
+%endif
+%ifarch aarch64
+find "$extract_zip_dir" -type f -name '*.node' ! -name 'index.linux-arm64-gnu.node' -delete
+%endif
 
 # Build-time metadata and Windows-only headers cannot be used by the Linux
 # runtime and should not be carried in the installed application.
@@ -126,6 +140,9 @@ test -f %{buildroot}%{_datadir}/metainfo/app.freelens.Freelens.metainfo.xml
 %{_datadir}/metainfo/app.freelens.Freelens.metainfo.xml
 
 %changelog
+* Fri Sep 04 2026 Anatolii Vorona <vorona.tolik@gmail.com> - 1.10.3-5
+- Use Fedora's Vulkan loader and discard non-target native add-ons.
+
 * Fri Sep 04 2026 Anatolii Vorona <vorona.tolik@gmail.com> - 1.10.3-4
 - Add rpmlint-clean package metadata, documentation, and man page.
 - Remove non-runtime Node module source and metadata from the installed app.
