@@ -6,7 +6,7 @@
 
 Name:           freelens
 Version:        %{upstream_version}
-Release:        3%{?dist}
+Release:        4%{?dist}
 Summary:        Free IDE for Kubernetes
 License:        MIT
 URL:            https://freelens.app/
@@ -30,11 +30,11 @@ BuildRequires:  nodejs24
 BuildRequires:  nodejs24-npm
 BuildRequires:  python3
 BuildRequires:  rpm
-Requires:       alsa-lib
+Requires:       libasound.so.2()(64bit)
 Requires:       at-spi2-core
 Requires:       gtk3
-Requires:       libXScrnSaver
-Requires:       libnotify
+Requires:       libXss.so.1()(64bit)
+Requires:       libnotify.so.4()(64bit)
 Requires:       nss
 Requires:       xdg-utils
 
@@ -67,7 +67,27 @@ install -d %{buildroot}%{_bindir} %{buildroot}%{_libdir}
 cp -a freelens-%{upstream_version}/freelens/dist/linux-unpacked \
     %{buildroot}%{_libdir}/freelens
 
-ln -s %{_libdir}/freelens/freelens %{buildroot}%{_bindir}/freelens
+# These runtime-loaded native modules are prebuilt by upstream.  Strip their
+# debug sections without changing their executable code or bundled ABI.
+%{__strip} --strip-unneeded \
+    %{buildroot}%{_libdir}/freelens/libvulkan.so.1 \
+    %{buildroot}%{_libdir}/freelens/resources/app.asar.unpacked/node_modules/node-pty/bin/linux-x64-*/node-pty.node \
+    %{buildroot}%{_libdir}/freelens/resources/app.asar.unpacked/node_modules/node-pty/prebuilds/linux-x64/pty.node
+
+# Build-time metadata and Windows-only headers cannot be used by the Linux
+# runtime and should not be carried in the installed application.
+rm -f \
+    %{buildroot}%{_libdir}/freelens/resources/app.asar.unpacked/node_modules/jszip/.codeclimate.yml \
+    %{buildroot}%{_libdir}/freelens/resources/app.asar.unpacked/node_modules/jszip/.editorconfig \
+    %{buildroot}%{_libdir}/freelens/resources/app.asar.unpacked/node_modules/jszip/.eslintrc.js \
+    %{buildroot}%{_libdir}/freelens/resources/app.asar.unpacked/node_modules/jszip/.jekyll-metadata \
+    %{buildroot}%{_libdir}/freelens/resources/app.asar.unpacked/node_modules/node-pty/src/win/conpty.h \
+    %{buildroot}%{_libdir}/freelens/resources/app.asar.unpacked/node_modules/node-pty/src/win/path_util.h
+
+# Use a relative target so RPM can relocate the package without an
+# absolute-symlink diagnostic.
+ln -s ../%{_lib}/freelens/freelens %{buildroot}%{_bindir}/freelens
+install -Dm0644 freelens.1 %{buildroot}%{_mandir}/man1/freelens.1
 install -Dm0644 freelens.desktop \
     %{buildroot}%{_datadir}/applications/freelens.desktop
 install -Dm0644 freelens-%{upstream_version}/freelens/build/metainfo.xml \
@@ -82,7 +102,7 @@ done
 # recursively installed application directory.
 (
     find %{buildroot}%{_libdir}/freelens -mindepth 1 -type d \
-        -printf '%%dir %{_libdir}/freelens/%%P\n'
+        -printf '%%%%dir %{_libdir}/freelens/%%P\n'
     find %{buildroot}%{_libdir}/freelens -mindepth 1 \( -type f -o -type l \) \
         ! -path '%{buildroot}%{_libdir}/freelens/LICENSE.electron.txt' \
         ! -path '%{buildroot}%{_libdir}/freelens/LICENSES.chromium.html' \
@@ -98,11 +118,20 @@ test -f %{buildroot}%{_datadir}/metainfo/app.freelens.Freelens.metainfo.xml
 %dir %{_libdir}/freelens
 %license %{_libdir}/freelens/LICENSE.electron.txt
 %license %{_libdir}/freelens/LICENSES.chromium.html
+%doc freelens-%{upstream_version}/README.md
 %{_bindir}/freelens
+%{_mandir}/man1/freelens.1*
 %{_datadir}/applications/freelens.desktop
 %{_datadir}/icons/hicolor/*/apps/freelens.png
 %{_datadir}/metainfo/app.freelens.Freelens.metainfo.xml
 
 %changelog
+* Fri Sep 04 2026 Anatolii Vorona <vorona.tolik@gmail.com> - 1.10.3-4
+- Add rpmlint-clean package metadata, documentation, and man page.
+- Remove non-runtime Node module source and metadata from the installed app.
+
+* Fri Sep 04 2026 Anatolii Vorona <vorona.tolik@gmail.com> - 1.10.3-3
+- Fix the /usr/bin/freelens launcher to use a relative symlink.
+
 * Fri Sep 04 2026 Anatolii Vorona <vorona.tolik@gmail.com> - 1.10.3-2
 - Initial downstream RPM repackage of the verified upstream binary release.

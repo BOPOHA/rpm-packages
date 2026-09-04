@@ -23,6 +23,11 @@ lockfile and builds the Electron application. Fedora's Node package does not
 ship Corepack, so the build installs a pinned Corepack launcher locally in the
 build directory before pnpm selects the repository-pinned pnpm release.
 
+After a successful build, `make fc` runs rpmlint against the produced binary
+RPM and writes the tracked `rpmlint.report.txt`. The command fails on any
+unfiltered finding. `rpmlint.toml` documents the narrow exceptions for
+upstream's prebuilt Kubernetes and Electron helper binaries.
+
 Create only the source RPM with:
 
 ```bash
