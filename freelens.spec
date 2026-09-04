@@ -41,6 +41,7 @@ Helm, and Freelens Kubernetes proxy binaries.
 
 %build
 cd freelens-%{upstream_version}
+npm install --global corepack@0.34.0
 corepack enable pnpm
 pnpm install --frozen-lockfile
 pnpm build:di
