@@ -21,10 +21,14 @@ Source1:        https://github.com/freelensapp/freelens/archive/refs/tags/v%{ups
 AutoReqProv:    no
 ExclusiveArch:  x86_64 aarch64
 BuildRequires:  cpio
+BuildRequires:  gcc
+BuildRequires:  gcc-c++
+BuildRequires:  make
 # Fedora's generic nodejs capability currently resolves to nodejs22; Freelens
 # declares Node >=24, so request the versioned Fedora packages explicitly.
 BuildRequires:  nodejs24
 BuildRequires:  nodejs24-npm
+BuildRequires:  python3
 BuildRequires:  rpm
 Requires:       alsa-lib
 Requires:       at-spi2-core
