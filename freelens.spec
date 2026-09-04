@@ -1,37 +1,27 @@
-# Repackage the upstream Electron application for the local RPM repository.
-# The upstream release artifact is verified before its payload is installed.
+# Build the upstream Electron application from a pinned release source tag.
 
 %global debug_package %{nil}
 %global _build_id_links none
 %global upstream_version 1.10.3
 
-%ifarch x86_64
-%global upstream_arch amd64
-%global upstream_sha256 8a7687b3db4165e40469d5e7f3598c90d12d90148f1084d12c8fedd33fa4b0a0
-%endif
-%ifarch aarch64
-%global upstream_arch arm64
-%global upstream_sha256 97091c134f8f8b64e78e4e03efd58f1abac908d004bb8a61f6cee97a4f12316d
-%endif
-
 Name:           freelens
 Version:        %{upstream_version}
-Release:        2%{?dist}
+Release:        3%{?dist}
 Summary:        Free IDE for Kubernetes
 License:        MIT
 URL:            https://freelens.app/
-# rpkg expands Source0 from the committed repository. Source1 is fetched while
-# making the SRPM, so Mock builds entirely from the SRPM's source payload.
+# rpkg expands Source0 from the committed repository. Source1 is the pinned
+# upstream GitHub release tag; the Electron application is built inside Mock.
 Source0:        {{{ git_repo_pack }}}
-Source1:        https://github.com/freelensapp/freelens/releases/download/v%{upstream_version}/Freelens-%{upstream_version}-linux-%{upstream_arch}.rpm
+Source1:        https://github.com/freelensapp/freelens/archive/refs/tags/v%{upstream_version}.tar.gz#/freelens-%{upstream_version}.tar.gz
 
-# This package ships upstream's prebuilt Electron application under /opt. Do
-# not derive ELF dependencies from the bundled Chromium/Electron libraries:
+# Do not derive ELF dependencies from the bundled Chromium/Electron libraries:
 # they would expose private bundled libraries as RPM capabilities and make the
 # package depend on implementation details. Keep the runtime contract explicit.
 AutoReqProv:    no
 ExclusiveArch:  x86_64 aarch64
 BuildRequires:  cpio
+BuildRequires:  nodejs >= 24
 BuildRequires:  rpm
 Requires:       alsa-lib
 Requires:       at-spi2-core
@@ -47,17 +37,23 @@ interface for managing Kubernetes clusters and bundles compatible kubectl,
 Helm, and Freelens Kubernetes proxy binaries.
 
 %prep
-%setup -q -n freelens-packages
-
-echo "%{upstream_sha256}  %{SOURCE1}" | sha256sum --check --strict
-rpm2cpio %{SOURCE1} | cpio -idm --quiet
+%setup -q -n freelens-packages -a 1
 
 %build
-# The upstream RPM contains the already-built Electron application.
+cd freelens-%{upstream_version}
+corepack enable pnpm
+pnpm install --frozen-lockfile
+pnpm build:di
+pnpm build
+pnpm build:app rpm --x64
+
+rpm_file="$(find freelens/dist -maxdepth 1 -type f -name '*.rpm' -print -quit)"
+test -n "$rpm_file"
+cp "$rpm_file" %{_builddir}/freelens-built.rpm
 
 %install
 install -d %{buildroot}
-cp -a opt usr %{buildroot}/
+rpm2cpio %{_builddir}/freelens-built.rpm | cpio -idm --quiet -D %{buildroot}
 
 %check
 test -x %{buildroot}/opt/Freelens/freelens
