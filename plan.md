@@ -24,9 +24,10 @@ unqualified `freelens` capability and obsoletes older unqualified packages so
 that RPM-installed GitHub releases migrate transactionally. Both variants
 declare reciprocal `Conflicts:` by their exact package names.
 
-Use explicit build targets such as `make fc-bundled` and, once its spec exists,
-`make fc-native`, each producing a distinct SRPM/binary RPM and rpmlint report.
-Do not call the native variant equivalent until its phase-specific tests pass.
+Use package-local build commands such as `cd freelens-bundled && make fc` and,
+once its spec exists, `cd freelens-native && make fc`. Each package produces a
+distinct SRPM/binary RPM and rpmlint report. Do not call the native variant
+equivalent until its phase-specific tests pass.
 
 ## Phase 1: low-risk cleanup — implemented
 

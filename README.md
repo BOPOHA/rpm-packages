@@ -1,65 +1,20 @@
-# Freelens RPM packaging
+# RPM packages
 
-The stable compatibility RPM is named `freelens-bundled`. It replaces older
-unqualified `freelens` RPMs, including the upstream GitHub RPM, in a normal
-DNF transaction; RPM removes files it owns under `/opt` automatically. A future
-`freelens-native` package will be mutually exclusive with it.
+This repository contains independent Fedora/COPR RPM package definitions.
+Each package directory owns its spec, build commands, documentation, and build
+results.
 
-The Electron 41 runtime bootstrap is built separately with `make fc-electron41`.
-It is a very large networked Chromium build; it writes its results under
-`rpm-results/electron41/` and does not overwrite Freelens results.
+| Directory | RPMs | Status |
+| --- | --- | --- |
+| [freelens-bundled](freelens-bundled) | `freelens-bundled` | Compatibility package; rebuild pending after layout migration |
+| [electron41](electron41) | `electron41`, `electron41-devel` | Source-build bootstrap |
 
-This repository builds Freelens from its pinned upstream GitHub release tag in
-Fedora Mock. The upstream build needs Node 24, pnpm, Electron Builder, and
-downloads the verified bundled `kubectl`, Helm, and Kubernetes-proxy executables.
-
-Electron Builder creates an unpacked application directory from the source
-build. The spec installs it under `%{_libdir}/freelens`, adds a `/usr/bin`
-launcher, and installs desktop, icon, and AppStream metadata separately. The
-spec deliberately disables automatic ELF dependency/provide generation because
-Freelens bundles Electron/Chromium shared libraries.
-
-## Fedora Mock build
+Run package commands from its directory, for example:
 
 ```bash
-make fc
+cd freelens-bundled && make fc
+cd electron41 && make fc
 ```
 
-`make fc` first creates an SRPM with `rpkg`, then builds it in the local Fedora
-Mock chroot. Its results are written to `rpm-results/`. The upstream GitHub
-source archive is downloaded as an SRPM source file; Mock then resolves the
-lockfile and builds the Electron application. Fedora's Node package does not
-ship Corepack, so the build installs a pinned Corepack launcher locally in the
-build directory before pnpm selects the repository-pinned pnpm release.
-
-After a successful build, `make fc` runs rpmlint against the produced binary
-RPM and writes the tracked `rpmlint.report.txt`. The command fails on any
-unfiltered finding. `rpmlint.toml` documents the narrow exceptions for
-upstream's prebuilt Kubernetes and Electron helper binaries.
-
-Create only the source RPM with:
-
-```bash
-make srpm
-```
-
-`fc` currently builds x86_64, matching the existing local Fedora Mock profile.
-
-## Updating Freelens
-
-1. Change `VERSION` in `Makefile` and `upstream_version` in `freelens.spec`.
-2. Confirm the source tag exists and update the expected Electron build target
-   if the upstream architecture matrix changes.
-3. Commit the changed packaging repository, then build with `make fc` and
-   install/test the resulting RPM on the supported
-   Fedora/RHEL-family target.
-
-The current upstream binary requires glibc 2.34 or newer, so target RHEL 9+
-or Fedora rather than RHEL 8.
-
-## TODO: package Corepack
-
-The native build temporarily installs `corepack@0.34.0` locally with npm because
-Fedora's Node.js package does not ship it. Create a `corepack` RPM in this same
-Freelens COPR repository, then replace that local npm bootstrap with
-`BuildRequires: corepack` in `freelens.spec`.
+The native Freelens work and shared migration plan are recorded in
+[plan.md](plan.md).
