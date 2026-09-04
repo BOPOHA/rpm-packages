@@ -14,7 +14,7 @@ srpm:
 	@echo "SRPM: $(PROJECTTMPDIR)/freelens-$(RPM_VERSION).src.rpm"
 
 fc: srpm
-	mock --no-clean --dnf --enable-network -r fedora-$(FEDORA_VERSION)-x86_64 --resultdir=rpm-results $(PROJECTTMPDIR)/freelens-$(RPM_VERSION).src.rpm
+	mock --no-clean --enable-network -r fedora-$(FEDORA_VERSION)-x86_64 --resultdir=rpm-results $(PROJECTTMPDIR)/freelens-$(RPM_VERSION).src.rpm
 
 clean:
 	rm -rf $(PROJECTTMPDIR) rpm-results
