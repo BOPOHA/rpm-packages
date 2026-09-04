@@ -22,7 +22,7 @@ License:        MIT
 URL:            https://freelens.app/
 # rpkg expands Source0 from the committed repository. Source1 is fetched while
 # making the SRPM, so Mock builds entirely from the SRPM's source payload.
-Source0:        {{{ git_repo_pack dir_name=freelens-packages }}
+Source0:        {{{ git_repo_pack }}}
 Source1:        https://github.com/freelensapp/freelens/releases/download/v%{upstream_version}/Freelens-%{upstream_version}-linux-%{upstream_arch}.rpm
 
 # This package ships upstream's prebuilt Electron application under /opt. Do
