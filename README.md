@@ -5,6 +5,10 @@ unqualified `freelens` RPMs, including the upstream GitHub RPM, in a normal
 DNF transaction; RPM removes files it owns under `/opt` automatically. A future
 `freelens-native` package will be mutually exclusive with it.
 
+The Electron 41 runtime bootstrap is built separately with `make fc-electron41`.
+It is a very large networked Chromium build; it writes its results under
+`rpm-results/electron41/` and does not overwrite Freelens results.
+
 This repository builds Freelens from its pinned upstream GitHub release tag in
 Fedora Mock. The upstream build needs Node 24, pnpm, Electron Builder, and
 downloads the verified bundled `kubectl`, Helm, and Kubernetes-proxy executables.
