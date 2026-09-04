@@ -47,6 +47,7 @@ cd freelens-%{upstream_version}
 # TODO: replace this temporary bootstrap with a Corepack RPM built in this COPR
 # repository and add it to BuildRequires.
 npm install --ignore-scripts --no-audit --no-fund --prefix .build-tools corepack@0.34.0
+mkdir -p .build-tools/bin
 node .build-tools/node_modules/corepack/dist/corepack.js enable --install-directory "$PWD/.build-tools/bin"
 export PATH="$PWD/.build-tools/bin:$PATH"
 pnpm install --frozen-lockfile
