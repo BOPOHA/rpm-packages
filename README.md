@@ -4,11 +4,11 @@ This repository builds Freelens from its pinned upstream GitHub release tag in
 Fedora Mock. The upstream build needs Node 24, pnpm, Electron Builder, and
 downloads the verified bundled `kubectl`, Helm, and Kubernetes-proxy executables.
 
-Electron Builder creates an intermediate RPM from the source build; the spec
-extracts its payload into the final RPM. This preserves upstream's launcher,
-icons, AppStream metadata, and bundled Kubernetes tools. The spec deliberately
-disables automatic ELF dependency/provide generation because Freelens bundles
-Electron/Chromium shared libraries under `/opt/Freelens`.
+Electron Builder creates an unpacked application directory from the source
+build. The spec installs it under `%{_libdir}/freelens`, adds a `/usr/bin`
+launcher, and installs desktop, icon, and AppStream metadata separately. The
+spec deliberately disables automatic ELF dependency/provide generation because
+Freelens bundles Electron/Chromium shared libraries.
 
 ## Fedora Mock build
 

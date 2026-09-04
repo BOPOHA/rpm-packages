@@ -59,25 +59,42 @@ export PATH="$PWD/.build-tools/bin:$PATH"
 pnpm install --frozen-lockfile
 pnpm build:di
 pnpm build
-pnpm build:app rpm --x64
-
-rpm_file="$(find freelens/dist -maxdepth 1 -type f -name '*.rpm' -print -quit)"
-test -n "$rpm_file"
-cp "$rpm_file" %{_builddir}/freelens-built.rpm
+pnpm build:app dir --x64
+test -x freelens/dist/linux-unpacked/freelens
 
 %install
-install -d %{buildroot}
-rpm2cpio %{_builddir}/freelens-built.rpm | cpio -idm --quiet -D %{buildroot}
+install -d %{buildroot}%{_bindir} %{buildroot}%{_libdir}
+cp -a freelens-%{upstream_version}/freelens/dist/linux-unpacked \
+    %{buildroot}%{_libdir}/freelens
+
+ln -s %{_libdir}/freelens/freelens %{buildroot}%{_bindir}/freelens
+install -Dm0644 freelens.desktop \
+    %{buildroot}%{_datadir}/applications/freelens.desktop
+install -Dm0644 freelens-%{upstream_version}/freelens/build/metainfo.xml \
+    %{buildroot}%{_datadir}/metainfo/app.freelens.Freelens.metainfo.xml
+for icon in freelens-%{upstream_version}/freelens/build/icons/*.png; do
+    size="$(basename "$icon" .png)"
+    install -Dm0644 "$icon" \
+        %{buildroot}%{_datadir}/icons/hicolor/${size}/apps/freelens.png
+done
+
+# Keep license files marked as licenses without listing them twice through the
+# recursively installed application directory.
+find %{buildroot}%{_libdir}/freelens -mindepth 1 \
+    ! -path '%{buildroot}%{_libdir}/freelens/LICENSE.electron.txt' \
+    ! -path '%{buildroot}%{_libdir}/freelens/LICENSES.chromium.html' \
+    -printf '%{_libdir}/freelens/%%P\n' > %{_builddir}/freelens.files
 
 %check
-test -x %{buildroot}/opt/Freelens/freelens
+test -x %{buildroot}%{_libdir}/freelens/freelens
 test -f %{buildroot}%{_datadir}/applications/freelens.desktop
 test -f %{buildroot}%{_datadir}/metainfo/app.freelens.Freelens.metainfo.xml
 
-%files
-%license /opt/Freelens/LICENSE.electron.txt
-%license /opt/Freelens/LICENSES.chromium.html
-/opt/Freelens
+%files -f %{_builddir}/freelens.files
+%dir %{_libdir}/freelens
+%license %{_libdir}/freelens/LICENSE.electron.txt
+%license %{_libdir}/freelens/LICENSES.chromium.html
+%{_bindir}/freelens
 %{_datadir}/applications/freelens.desktop
 %{_datadir}/icons/hicolor/*/apps/freelens.png
 %{_datadir}/metainfo/app.freelens.Freelens.metainfo.xml
