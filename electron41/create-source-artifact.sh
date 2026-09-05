@@ -85,7 +85,9 @@ done
 for command_name in git tar zstd sha256sum; do
   require_command "$command_name"
 done
-tar --help | grep -q -- '--exclude-vcs' || die 'GNU tar with --exclude-vcs is required'
+# Do not use grep -q here: with pipefail it closes the pipe early, causing GNU
+# tar to report SIGPIPE and making a supported tar look unsupported.
+tar --help | grep -F -- '--exclude-vcs' >/dev/null || die 'GNU tar with --exclude-vcs is required'
 
 mkdir -p "$workdir" "$output_dir"
 workdir="$(cd "$workdir" && pwd -P)"
