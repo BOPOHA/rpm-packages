@@ -96,7 +96,10 @@ mv ../depot_tools-%{depot_tools_commit} ../electron%{electron_major}-checkout/de
 cd ../electron%{electron_major}-checkout
 export PATH="$PWD/depot_tools:$PATH"
 gclient config --name src/electron --unmanaged https://github.com/electron/electron
-gclient sync -f --nohooks
+# Electron's DEPS hooks apply Electron's patch stack to the Chromium checkout
+# (and install its locked JavaScript dependencies).  Do not use --nohooks:
+# Chromium by itself is not a buildable Electron tree.
+gclient sync -f --with_branch_heads --with_tags
 cd src
 export CHROMIUM_BUILDTOOLS_PATH="$PWD/buildtools"
 gn gen out/Release --args='import("//electron/build/args/release.gn") is_component_build=false'
