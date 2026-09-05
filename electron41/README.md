@@ -55,4 +55,9 @@ spec, runs `gclient sync` **with hooks**, and writes both a
 archive contains the `src/` source tree plus `SOURCE-MANIFEST.json`; it excludes
 all nested `.git` data and `out/` build output. The workspace is intentionally
 retained so a failed sync can be resumed. Do not point `--workdir` at a
-directory containing other files.
+directory containing other files. It also keeps `git-cache/`, and creates a
+completion stamp after a successful sync; rerunning the command reuses these
+and does not re-download dependencies or rerun `gclient`. The archive includes
+`GCLIENT-REVINFO.txt` and records its host OS/architecture because hooks can
+download platform-specific build inputs. If the archive and checksum already
+exist and verify, a repeated invocation exits successfully without doing work.

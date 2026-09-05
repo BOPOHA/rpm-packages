@@ -2,8 +2,8 @@
 # Create a ready-to-build Electron source snapshot for the electron41 RPM.
 #
 # This intentionally performs the expensive networked gclient sync outside of
-# rpmbuild.  The resulting archive contains source only: no Git metadata and
-# no Ninja output.
+# rpmbuild. The resulting archive is a prepared build input: no Git metadata
+# and no Ninja output, but it may contain platform-specific hook downloads.
 
 set -Eeuo pipefail
 
@@ -21,8 +21,9 @@ Usage: create-source-artifact.sh --workdir PATH [options]
 
 Create a complete, patched Electron/Chromium source snapshot.  PATH must be a
 dedicated directory with substantial free space (plan for at least 150 GiB).
-The directory is retained on success and failure, so a failed gclient sync can
-usually be resumed by running the same command again.
+The directory is retained on success and failure. A persistent Git cache and a
+completion stamp mean rerunning this command reuses downloaded data; after a
+successful sync it does not invoke gclient again.
 
 Options:
   --workdir PATH       Required workspace for the checkout and depot_tools.
@@ -92,20 +93,33 @@ output_dir="$(cd "$output_dir" && pwd -P)"
 
 readonly checkout="$workdir/checkout"
 readonly depot_tools="$workdir/depot_tools"
+readonly git_cache="$workdir/git-cache"
 readonly artifact_basename="electron41-source-${electron_version}"
 readonly archive="$output_dir/${artifact_basename}.tar.zst"
 readonly checksum="$archive.sha256"
+readonly sync_stamp="$checkout/.electron41-sync-${electron_version}.complete"
+readonly revinfo="$checkout/GCLIENT-REVINFO.txt"
 
 if [[ -e "$archive" || -e "$checksum" ]]; then
-  die "refusing to replace existing artifact: $archive"
+  if [[ -f "$archive" && -f "$checksum" ]] && (cd "$output_dir" && sha256sum -c "${checksum##*/}"); then
+    printf 'Reusing verified artifact: %s\n' "$archive"
+    exit 0
+  fi
+  die "artifact or checksum already exists but is incomplete or invalid: $archive"
 fi
 
-# A partial checkout is deliberately retained. gclient and Git reuse it on a
-# later invocation, avoiding a full restart after a transient network failure.
+# A partial checkout is deliberately retained. GIT_CACHE_PATH lets gclient
+# reuse objects even if it has to recreate one of its nested worktrees.
+mkdir -p "$git_cache"
+export GIT_CACHE_PATH="$git_cache"
+export DEPOT_TOOLS_UPDATE=0
+
 if [[ ! -d "$depot_tools/.git" ]]; then
   git clone https://chromium.googlesource.com/chromium/tools/depot_tools.git "$depot_tools"
 fi
-git -C "$depot_tools" fetch --quiet origin "$depot_tools_commit"
+if ! git -C "$depot_tools" cat-file -e "${depot_tools_commit}^{commit}" 2>/dev/null; then
+  git -C "$depot_tools" fetch --quiet origin "$depot_tools_commit"
+fi
 git -C "$depot_tools" checkout --quiet --detach "$depot_tools_commit"
 export PATH="$depot_tools:$PATH"
 
@@ -122,15 +136,24 @@ actual_tag="$(git -C "$checkout/src/electron" describe --exact-match --tags HEAD
 [[ "$actual_tag" == "v${electron_version}" ]] || die "existing Electron checkout is not v${electron_version} (found ${actual_tag:-unknown})"
 
 cd "$checkout"
-gclient config --name src/electron --unmanaged https://github.com/electron/electron
-# Do not add --nohooks. Electron's hooks patch Chromium and install its locked
-# JavaScript dependencies; the resulting tree is what this artifact captures.
-gclient sync -f --with_branch_heads --with_tags
+if [[ -f "$sync_stamp" && -f "$revinfo" ]]; then
+  printf 'Reusing completed gclient checkout: %s\n' "$checkout"
+else
+  gclient config --name src/electron --unmanaged https://github.com/electron/electron
+  # Do not add --nohooks. Electron's hooks patch Chromium and install its locked
+  # JavaScript dependencies; the resulting tree is what this artifact captures.
+  gclient sync -f --with_branch_heads --with_tags
 
-[[ -f src/electron/BUILD.gn ]] || die 'Electron source disappeared during gclient sync'
-[[ -f src/components/os_crypt/sync/features.gni ]] || die 'Chromium checkout is incomplete: expected os_crypt features.gni is absent'
-grep -Fq '"//electron:*"' src/components/os_crypt/sync/BUILD.gn || \
-  die 'Electron Chromium patches were not applied; do not publish this artifact'
+  [[ -f src/electron/BUILD.gn ]] || die 'Electron source disappeared during gclient sync'
+  [[ -f src/components/os_crypt/sync/features.gni ]] || die 'Chromium checkout is incomplete: expected os_crypt features.gni is absent'
+  grep -Fq '"//electron:*"' src/components/os_crypt/sync/BUILD.gn || \
+    die 'Electron Chromium patches were not applied; do not publish this artifact'
+  gclient revinfo >"$revinfo"
+  printf 'electron_version=%s\nelectron_revision=%s\nchromium_revision=%s\n' \
+    "$electron_version" \
+    "$(git -C src/electron rev-parse HEAD)" \
+    "$(git -C src rev-parse HEAD)" >"$sync_stamp"
+fi
 
 manifest="$checkout/SOURCE-MANIFEST.json"
 cat >"$manifest" <<EOF
@@ -140,8 +163,11 @@ cat >"$manifest" <<EOF
   "electron_revision": "$(git -C src/electron rev-parse HEAD)",
   "chromium_revision": "$(git -C src rev-parse HEAD)",
   "depot_tools_commit": "${depot_tools_commit}",
+  "host_os": "$(uname -s)",
+  "host_arch": "$(uname -m)",
   "created_utc": "$(date -u +%Y-%m-%dT%H:%M:%SZ)",
-  "contents": "gclient-synced Electron source, including DEPS and applied hooks; excludes VCS metadata and build outputs"
+  "contents": "prepared gclient-synced Electron build input, including DEPS and applied hooks; excludes VCS metadata and build outputs",
+  "dependency_manifest": "GCLIENT-REVINFO.txt"
 }
 EOF
 
@@ -152,7 +178,7 @@ tar --use-compress-program="zstd -T0 -${zstd_level}" \
   --exclude='src/out' \
   --transform="s,^,${artifact_basename}/," \
   -C "$checkout" \
-  -cf "$archive" src SOURCE-MANIFEST.json
+  -cf "$archive" src SOURCE-MANIFEST.json GCLIENT-REVINFO.txt
 
 sha256sum "$archive" >"$checksum"
 printf 'Created: %s\nSHA-256: %s\nWorkspace retained at: %s\n' \

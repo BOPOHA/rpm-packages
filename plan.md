@@ -46,13 +46,60 @@ Freelens with both GPU acceleration and `--disable-gpu` to verify startup.
 - Fedora 44 currently has no `electron` or `electron-devel` package in the
   enabled repositories, while Freelens 1.10.3 requires Electron 41.10.0.
 - The `electron41.spec` bootstrap provides parallel-installable `electron41`
-  and `electron41-devel` packages. It pins Electron and depot_tools, while
-  gclient synchronizes Electron's pinned Chromium DEPS at build time.
+  and `electron41-devel` packages.
 - Audit Electron's generated Chromium third-party notice before publication;
   the initial aggregate license expression deliberately does not claim the
   runtime is MIT-only.
 - Do not substitute individual Chromium private libraries; the native variant
   must use a whole compatible system Electron runtime.
+
+### Recommended delivery decision
+
+Use a prepared, immutable `linux-x86_64` Electron build-input artifact as the
+temporary solution. A dedicated large machine runs the pinned Electron checkout
+and `gclient sync` with hooks once per Electron update, then publishes a
+compressed archive, SHA-256 checksum, `SOURCE-MANIFEST.json`, and
+`GCLIENT-REVINFO.txt` to controlled object storage. The RPM build downloads or
+uses that declared `Source` artifact, unpacks it, and performs GN/Ninja only;
+it must not invoke `gclient` in Mock. This makes ordinary Mock/COPR builds
+independent of the 80+ GiB dependency synchronization while retaining the
+complete exact input set.
+
+The current `create-source-artifact.sh` implements the producer side. Its
+workspace is deliberately persistent and idempotent: a Git object cache and a
+completion stamp reuse completed downloads and skip `gclient` on subsequent
+runs. The artifact is a prepared build input, not pure source: Electron hooks
+can download platform-specific CIPD/GCS payloads. Publish one artifact per
+host/target architecture and retain its provenance and license records.
+
+Pros: fast repeatable RPM builds, no networked dependency resolver in `%build`,
+and a practical route to a working Electron 41 runtime. Cons: a very large
+internal artifact, continued bundled Chromium dependencies, architecture-
+specific inputs, and it is not sufficient for a Fedora-reviewable package.
+
+### Long-term Fedora-quality path
+
+Arch Linux's Electron 41 package is the reference approach to evaluate rather
+than copy wholesale. It parses Electron `DEPS` into roughly 158 individually
+pinned Git sources, reconstructs the source tree, selectively reproduces
+required hooks, uses system toolchains/libraries, and carries compatibility
+patches for its current toolchain. A Fedora port would need an RPM-oriented
+source-roller/lockfile, explicit handling of needed CIPD/GCS artifacts,
+Fedora-specific compiler/Rust/GN settings, library unbundling work, and tested
+downstream patches. Do this only after the temporary artifact-backed runtime is
+validated.
+
+Immediate implementation guardrails:
+
+- Support `x86_64` first. Do not advertise `aarch64` until it has its own
+  prepared artifact and installed-RPM validation.
+- Set Fedora toolchain and GN policy explicitly (`use_sysroot=false`, suitable
+  PGO policy, compiler/Rust locations) instead of relying on downloaded
+  Chromium defaults.
+- Add the missing compiler, linker, Rust, Java, GN/Ninja, Node/Yarn, and
+  system-library build requirements as actual build failures establish them.
+- Port Arch/Gentoo/NixOS patches only when they are applicable to the Fedora
+  toolchain; do not copy them as an unreviewed bundle.
 
 Validation: reproducible Electron RPM build, then Freelens startup under that
 runtime with GPU, software rendering, Wayland/X11, terminal, and extensions.
