@@ -83,3 +83,29 @@ The checksum was verified after creation. Its manifest records Electron commit
 `015e7a65b770b8ca81c6adc7645b83b405e7f016`, Chromium commit
 `3a3dae94a80d53bce850c868789fe4ab7fc0b1a7`, and the Chromium release
 `146.0.7680.216` in `GCLIENT-REVINFO.txt`.
+
+## Building the RPM from the artifact
+
+The RPM spec now builds from the prepared archive rather than running
+`gclient` in Mock. On the artifact-producing machine, use:
+
+```bash
+make build
+```
+
+`make` verifies `/mnt/artifacts/electron41/electron41-source-41.10.0.tar.zst`
+against its adjacent `.sha256`, then stages a real copy in this package
+directory for SRPM creation (a reflink is used where the filesystem supports
+it). To use a downloaded artifact stored elsewhere, provide its
+local path explicitly:
+
+```bash
+make build ARTIFACT=/path/to/electron41-source-41.10.0.tar.zst
+```
+
+The current artifact is `linux-x86_64` only, so the RPM deliberately supports
+`x86_64` only. Mock still needs enough free disk for the expanded sources and
+the Chromium compile; the 95 GiB currently free on this host may be tight.
+The SRPM staging directory defaults to `/mnt/fast/electron41-rpmbuild`, rather
+than `/tmp`, because the SRPM itself embeds the 7.6 GiB archive. Override it
+when needed with `PROJECTTMPDIR=/path/with/space`.

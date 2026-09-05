@@ -1,11 +1,11 @@
 # Bootstrap Electron 41 from source for parallel installation on Fedora.
 #
-# This is intended for COPR-style networked builds. Electron's documented build
-# process synchronizes the Chromium revision and other dependencies from DEPS;
-# it is therefore not yet a Fedora-reviewable, fully vendored source package.
+# This package consumes a prepared, architecture-specific Electron build-input
+# archive. Its producer runs gclient and hooks outside rpmbuild; Mock only
+# unpacks the pinned tree and compiles it. This is an internal packaging route,
+# not yet a Fedora-reviewable, fully unbundled source package.
 
 %global electron_major 41
-%global depot_tools_commit b6aeae1769e1448cf8b53d0d05c4b125fb5e2c93
 %global electron_libdir %{_libdir}/electron%{electron_major}
 %global electron_includedir %{_includedir}/electron%{electron_major}
 
@@ -17,14 +17,11 @@ Summary:        Cross-platform desktop runtime based on Chromium and Node.js
 # third-party components; LICENSES.chromium.html is installed with the RPM.
 License:        MIT AND LicenseRef-Electron-ThirdParty
 URL:            https://www.electronjs.org/
-Source0:        https://github.com/electron/electron/archive/refs/tags/v%{version}.tar.gz#/electron-%{version}.tar.gz
-Source1:        https://chromium.googlesource.com/chromium/tools/depot_tools/+archive/%{depot_tools_commit}.tar.gz#/depot_tools-%{depot_tools_commit}.tar.gz
+Source0:        electron41-source-%{version}.tar.zst
 
-ExclusiveArch:  x86_64 aarch64
-BuildRequires:  bzip2
+ExclusiveArch:  x86_64
 BuildRequires:  clang
 BuildRequires:  gcc-c++
-BuildRequires:  git-core
 BuildRequires:  glib2-devel
 BuildRequires:  gtk3-devel
 BuildRequires:  mesa-libgbm-devel
@@ -54,6 +51,7 @@ BuildRequires:  pkgconfig(xrandr)
 BuildRequires:  pkgconfig(xscrnsaver)
 BuildRequires:  pkgconfig(xtst)
 BuildRequires:  python3
+BuildRequires:  ninja-build
 BuildRequires:  unzip
 
 Requires:       alsa-lib
@@ -80,33 +78,16 @@ Headers and build metadata for native Node.js modules targeting Electron
 package can coexist with other Electron development packages.
 
 %prep
-%setup -q -n electron-%{version}
-# Gitiles archives depot_tools without a leading directory, so unpack it into
-# a versioned sibling explicitly instead of relying on the setup macro.
-mkdir ../depot_tools-%{depot_tools_commit}
-tar -xzf %{SOURCE1} -C ../depot_tools-%{depot_tools_commit}
+%setup -q -n electron41-source-%{version}
 
 %build
-# Keep the complete Chromium checkout outside the unpacked Electron source.
-# gclient reads Electron's pinned DEPS file and makes src/electron unmanaged,
-# preserving the Source0 content rather than fetching an unpinned Electron tip.
-mkdir -p ../electron%{electron_major}-checkout/src
-ln -s ../../electron-%{version} ../electron%{electron_major}-checkout/src/electron
-mv ../depot_tools-%{depot_tools_commit} ../electron%{electron_major}-checkout/depot_tools
-cd ../electron%{electron_major}-checkout
-export PATH="$PWD/depot_tools:$PATH"
-gclient config --name src/electron --unmanaged https://github.com/electron/electron
-# Electron's DEPS hooks apply Electron's patch stack to the Chromium checkout
-# (and install its locked JavaScript dependencies).  Do not use --nohooks:
-# Chromium by itself is not a buildable Electron tree.
-gclient sync -f --with_branch_heads --with_tags
 cd src
 export CHROMIUM_BUILDTOOLS_PATH="$PWD/buildtools"
 gn gen out/Release --args='import("//electron/build/args/release.gn") is_component_build=false'
-autoninja -C out/Release electron electron:electron_dist_zip electron:node_headers
+ninja -C out/Release electron electron:electron_dist_zip electron:node_headers
 
 %install
-cd ../electron%{electron_major}-checkout/src
+cd src
 install -d %{buildroot}%{electron_libdir}
 # electron_dist_zip creates the runtime layout without copying intermediate
 # Chromium objects. Keep the versioned runtime self-contained.
