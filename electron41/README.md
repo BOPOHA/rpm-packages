@@ -61,3 +61,25 @@ and does not re-download dependencies or rerun `gclient`. The archive includes
 `GCLIENT-REVINFO.txt` and records its host OS/architecture because hooks can
 download platform-specific build inputs. If the archive and checksum already
 exist and verify, a repeated invocation exits successfully without doing work.
+
+### Measured Electron 41.10.0 artifact run
+
+The first successful `linux-x86_64` run completed on 2026-09-05. This is a
+useful capacity baseline, not a build-time guarantee:
+
+| Measurement | Result |
+| --- | ---: |
+| Host CPU | Intel Core i5-10210U (4 cores / 8 threads) |
+| Elapsed time (`real`) | 56m 54s |
+| CPU time (`user` / `sys`) | 139m 08s / 19m 12s |
+| Persistent workspace | 54 GiB |
+| Checkout / Git cache / depot_tools | 25 GiB / 28 GiB / 1.0 GiB |
+| Produced `.tar.zst` | 7.6 GiB (`zstd`: 7.51 GiB) |
+
+The artifact is
+`electron41-source-41.10.0.tar.zst`; its SHA-256 is
+`c16ec96639f846e93d590a84f08f78a3fedf3d2c01381426d6b544aa7381c044`.
+The checksum was verified after creation. Its manifest records Electron commit
+`015e7a65b770b8ca81c6adc7645b83b405e7f016`, Chromium commit
+`3a3dae94a80d53bce850c868789fe4ab7fc0b1a7`, and the Chromium release
+`146.0.7680.216` in `GCLIENT-REVINFO.txt`.
