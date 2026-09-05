@@ -83,7 +83,9 @@ package can coexist with other Electron development packages.
 %build
 cd src
 export CHROMIUM_BUILDTOOLS_PATH="$PWD/buildtools"
-gn gen out/Release --args='import("//electron/build/args/release.gn") is_component_build=false'
+# depot_tools normally puts this bundled GN binary on PATH. The prepared-source
+# build intentionally omits depot_tools, so invoke the pinned binary directly.
+"$CHROMIUM_BUILDTOOLS_PATH/linux64/gn" gen out/Release --args='import("//electron/build/args/release.gn") is_component_build=false'
 ninja -C out/Release electron electron:electron_dist_zip electron:node_headers
 
 %install
