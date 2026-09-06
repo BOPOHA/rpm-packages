@@ -179,7 +179,6 @@ if [[ ! -d "$amd64_sysroot" ]]; then
     --arch=amd64
 fi
 [[ -d "$amd64_sysroot" ]] || die "required Chromium sysroot was not installed: $amd64_sysroot"
-gclient revinfo >"$revinfo"
 
 manifest="$checkout/SOURCE-MANIFEST.json"
 cat >"$manifest" <<EOF
