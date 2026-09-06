@@ -85,7 +85,10 @@ cd src
 export CHROMIUM_BUILDTOOLS_PATH="$PWD/buildtools"
 # depot_tools normally puts this bundled GN binary on PATH. The prepared-source
 # build intentionally omits depot_tools, so invoke the pinned binary directly.
-"$CHROMIUM_BUILDTOOLS_PATH/linux64/gn" gen out/Release --args='import("//electron/build/args/release.gn") is_component_build=false'
+# The source artifact deliberately excludes every .git directory. Electron
+# otherwise discovers its version from electron/.git; pass the RPM version
+# explicitly, as Electron's source-tarball build path requires.
+"$CHROMIUM_BUILDTOOLS_PATH/linux64/gn" gen out/Release --args='import("//electron/build/args/release.gn") is_component_build=false override_electron_version="%{version}"'
 ninja -C out/Release electron electron:electron_dist_zip electron:node_headers
 
 %install
