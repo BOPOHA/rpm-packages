@@ -15,7 +15,7 @@ PROJECTTMPDIR ?= /mnt/fast/$(PACKAGE_NAME)-rpmbuild
 stage-source:
 	test -f "$(ARTIFACT)"
 	test -f "$(ARTIFACT).sha256"
-	sha256sum -c "$(ARTIFACT).sha256"
+	cd "$(dir $(ARTIFACT))" && sha256sum -c "$(notdir $(ARTIFACT)).sha256"
 	rm -f "$(SOURCE_ARCHIVE)"
 	cp --reflink=auto "$(ARTIFACT)" "$(SOURCE_ARCHIVE)"
 

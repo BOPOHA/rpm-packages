@@ -14,6 +14,7 @@ electron_version="$electron_version_default"
 workdir=''
 output_dir="$PWD"
 zstd_level=6
+refresh_archive=false
 
 usage() {
   cat <<'EOF'
@@ -30,6 +31,7 @@ Options:
   --output-dir PATH    Where to write the archive and .sha256 file (default: .)
   --version VERSION    Electron version without a leading v (default: 41.10.0)
   --zstd-level N       Zstandard level, 1-19 (default: 6)
+  --refresh            Recreate an existing archive from the retained checkout.
   -h, --help           Show this help.
 
 Example:
@@ -70,6 +72,10 @@ while (($#)); do
       zstd_level="$2"
       shift 2
       ;;
+    --refresh)
+      refresh_archive=true
+      shift
+      ;;
     -h|--help)
       usage
       exit 0
@@ -104,10 +110,16 @@ readonly revinfo="$checkout/GCLIENT-REVINFO.txt"
 
 if [[ -e "$archive" || -e "$checksum" ]]; then
   if [[ -f "$archive" && -f "$checksum" ]] && (cd "$output_dir" && sha256sum -c "${checksum##*/}"); then
-    printf 'Reusing verified artifact: %s\n' "$archive"
-    exit 0
+    if [[ "$refresh_archive" == false ]]; then
+      printf 'Reusing verified artifact: %s\n' "$archive"
+      exit 0
+    fi
+    printf 'Refreshing verified artifact from retained checkout: %s\n' "$archive"
+  elif [[ "$refresh_archive" == false ]]; then
+    die "artifact or checksum already exists but is incomplete or invalid: $archive"
+  else
+    die "refusing to refresh an incomplete or invalid artifact: $archive"
   fi
-  die "artifact or checksum already exists but is incomplete or invalid: $archive"
 fi
 
 # A partial checkout is deliberately retained. GIT_CACHE_PATH lets gclient
@@ -157,6 +169,18 @@ else
     "$(git -C src rev-parse HEAD)" >"$sync_stamp"
 fi
 
+# gclient did not enable checkout_x64 for this unmanaged Electron solution, so
+# its conditional DEPS hook omits the sysroot. Electron's release GN args do
+# require it; install it here, in the artifact producer, rather than in Mock.
+readonly amd64_sysroot='src/build/linux/debian_bullseye_amd64-sysroot'
+if [[ ! -d "$amd64_sysroot" ]]; then
+  python3 src/build/linux/sysroot_scripts/install-sysroot.py \
+    --sysroots-json-path=electron/script/sysroots.json \
+    --arch=amd64
+fi
+[[ -d "$amd64_sysroot" ]] || die "required Chromium sysroot was not installed: $amd64_sysroot"
+gclient revinfo >"$revinfo"
+
 manifest="$checkout/SOURCE-MANIFEST.json"
 cat >"$manifest" <<EOF
 {
@@ -168,20 +192,31 @@ cat >"$manifest" <<EOF
   "host_os": "$(uname -s)",
   "host_arch": "$(uname -m)",
   "created_utc": "$(date -u +%Y-%m-%dT%H:%M:%SZ)",
-  "contents": "prepared gclient-synced Electron build input, including DEPS and applied hooks; excludes VCS metadata and build outputs",
+  "contents": "prepared gclient-synced Electron build input, including DEPS, applied hooks, and the amd64 Chromium sysroot; excludes VCS metadata and build outputs",
   "dependency_manifest": "GCLIENT-REVINFO.txt"
 }
 EOF
 
 # `--exclude-vcs` removes every nested .git directory. No build has been run,
 # but exclude out/ defensively so rerunning this script never ships objects.
+archive_tmp="$output_dir/.${artifact_basename}.$$.tar.zst"
+checksum_tmp="$output_dir/.${artifact_basename}.$$.tar.zst.sha256"
+trap 'rm -f "$archive_tmp" "$checksum_tmp"' EXIT
+
 tar --use-compress-program="zstd -T0 -${zstd_level}" \
   --exclude-vcs \
   --exclude='src/out' \
   --transform="s,^,${artifact_basename}/," \
   -C "$checkout" \
-  -cf "$archive" src SOURCE-MANIFEST.json GCLIENT-REVINFO.txt
+  -cf "$archive_tmp" src SOURCE-MANIFEST.json GCLIENT-REVINFO.txt
 
-sha256sum "$archive" >"$checksum"
+(
+  cd "$output_dir"
+  archive_hash="$(sha256sum "${archive_tmp##*/}" | awk '{print $1}')"
+  printf '%s  %s\n' "$archive_hash" "${archive##*/}" >"${checksum_tmp##*/}"
+)
+mv -f "$archive_tmp" "$archive"
+mv -f "$checksum_tmp" "$checksum"
+trap - EXIT
 printf 'Created: %s\nSHA-256: %s\nWorkspace retained at: %s\n' \
   "$archive" "$checksum" "$workdir"
