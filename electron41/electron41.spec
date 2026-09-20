@@ -23,6 +23,7 @@ Patch0:         electron41-library-loader-config.patch
 ExclusiveArch:  x86_64
 BuildRequires:  clang
 BuildRequires:  gcc-c++
+BuildRequires:  gperf
 BuildRequires:  glib2-devel
 BuildRequires:  gtk3-devel
 BuildRequires:  mesa-libgbm-devel
