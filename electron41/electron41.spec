@@ -18,6 +18,7 @@ Summary:        Cross-platform desktop runtime based on Chromium and Node.js
 License:        MIT AND LicenseRef-Electron-ThirdParty
 URL:            https://www.electronjs.org/
 Source0:        electron41-source-%{version}.tar.zst
+Patch0:         electron41-library-loader-config.patch
 
 ExclusiveArch:  x86_64
 BuildRequires:  clang
@@ -79,6 +80,7 @@ package can coexist with other Electron development packages.
 
 %prep
 %setup -q -n electron41-source-%{version}
+%patch 0 -p1
 
 %build
 cd src

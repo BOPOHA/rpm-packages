@@ -1,0 +1,10 @@
+--- a/src/tools/generate_library_loader/generate_library_loader.gni
++++ b/src/tools/generate_library_loader/generate_library_loader.gni
+@@ -55,6 +55,7 @@
+   source_set(target_name) {
+     if (defined(invoker.config)) {
++      configs = [ invoker.config ]
+       public_configs = [ invoker.config ]
+     }
+     sources = [
+       output_cc,
