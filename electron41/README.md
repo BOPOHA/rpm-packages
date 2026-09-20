@@ -110,10 +110,11 @@ The SRPM staging directory defaults to `/mnt/fast/electron41-rpmbuild`, rather
 than `/tmp`, because the SRPM itself embeds the 7.6 GiB archive. Override it
 when needed with `PROJECTTMPDIR=/path/with/space`.
 
-The prepared x86_64 artifact includes Chromium's Debian amd64 sysroot. If an
-older artifact fails GN generation with a missing
-`debian_bullseye_amd64-sysroot`, recreate it without re-downloading the Git
-checkout:
+The prepared x86_64 artifact includes Chromium's Debian amd64 sysroot and
+bundled LLVM toolchain. If an older artifact fails GN/Ninja with a missing
+`debian_bullseye_amd64-sysroot` or
+`third_party/llvm-build/Release+Asserts/bin/llvm-strip`, recreate it without
+re-downloading the Git checkout:
 
 ```bash
 ./create-source-artifact.sh \
@@ -122,6 +123,7 @@ checkout:
   --refresh
 ```
 
-`--refresh` installs only missing prepared inputs (including the sysroot), then
+`--refresh` installs only missing prepared inputs (including the sysroot and
+LLVM toolchain), then
 writes temporary archive/checksum files and replaces the old pair only after
 a successful archive operation.

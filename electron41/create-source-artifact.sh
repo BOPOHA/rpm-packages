@@ -180,6 +180,20 @@ if [[ ! -d "$amd64_sysroot" ]]; then
 fi
 [[ -d "$amd64_sysroot" ]] || die "required Chromium sysroot was not installed: $amd64_sysroot"
 
+# The clang hook is normally run by gclient, but a completed sync is not
+# sufficient evidence that its downloaded toolchain is present (for example,
+# a resumed sync can have a successful stamp after the hook download failed).
+# GN's release configuration refers to this exact bundled path; relying on a
+# system llvm-strip would produce a source artifact that only fails much later
+# when Ninja starts the build.
+readonly llvm_build='src/third_party/llvm-build/Release+Asserts'
+if [[ ! -x "$llvm_build/bin/llvm-strip" ]]; then
+  printf 'Chromium LLVM toolchain is missing; running the clang hook\n' >&2
+  python3 src/tools/clang/scripts/update.py
+fi
+[[ -x "$llvm_build/bin/llvm-strip" ]] || \
+  die "required Chromium LLVM toolchain was not installed: $llvm_build/bin/llvm-strip"
+
 manifest="$checkout/SOURCE-MANIFEST.json"
 cat >"$manifest" <<EOF
 {
@@ -191,7 +205,7 @@ cat >"$manifest" <<EOF
   "host_os": "$(uname -s)",
   "host_arch": "$(uname -m)",
   "created_utc": "$(date -u +%Y-%m-%dT%H:%M:%SZ)",
-  "contents": "prepared gclient-synced Electron build input, including DEPS, applied hooks, and the amd64 Chromium sysroot; excludes VCS metadata and build outputs",
+  "contents": "prepared gclient-synced Electron build input, including DEPS, applied hooks, the Chromium LLVM toolchain, and the amd64 Chromium sysroot; excludes VCS metadata and build outputs",
   "dependency_manifest": "GCLIENT-REVINFO.txt"
 }
 EOF
