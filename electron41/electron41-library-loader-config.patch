@@ -3,7 +3,7 @@
 @@ -55,6 +55,7 @@
    source_set(target_name) {
      if (defined(invoker.config)) {
-+      configs = [ invoker.config ]
++      configs += [ invoker.config ]
        public_configs = [ invoker.config ]
      }
      sources = [
