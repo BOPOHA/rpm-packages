@@ -216,10 +216,13 @@ archive_tmp="$output_dir/.${artifact_basename}.$$.tar.zst"
 checksum_tmp="$output_dir/.${artifact_basename}.$$.tar.zst.sha256"
 trap 'rm -f "$archive_tmp" "$checksum_tmp"' EXIT
 
+# Restrict the prefix transformation to archive member names.  Without
+# flags=r GNU tar also rewrites relative symlink targets (for example,
+# llvm-strip -> llvm-objcopy), leaving broken links after extraction.
 tar --use-compress-program="zstd -T0 -${zstd_level}" \
   --exclude-vcs \
   --exclude='src/out' \
-  --transform="s,^,${artifact_basename}/," \
+  --transform="flags=r;s,^,${artifact_basename}/," \
   -C "$checkout" \
   -cf "$archive_tmp" src SOURCE-MANIFEST.json GCLIENT-REVINFO.txt
 
