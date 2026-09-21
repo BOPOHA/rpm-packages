@@ -87,7 +87,9 @@ package can coexist with other Electron development packages.
 cd src
 export CHROMIUM_BUILDTOOLS_PATH="$PWD/buildtools"
 # depot_tools normally puts this bundled GN binary on PATH. The prepared-source
-# build intentionally omits depot_tools, so invoke the pinned binary directly.
+# build intentionally omits depot_tools, so make its pinned binary available to
+# GN-driven helper scripts as well as invoking it directly below.
+export PATH="$CHROMIUM_BUILDTOOLS_PATH/linux64:$PATH"
 # The source artifact deliberately excludes every .git directory. Electron
 # otherwise discovers its version from electron/.git; pass the RPM version
 # explicitly, as Electron's source-tarball build path requires.
