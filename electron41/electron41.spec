@@ -8,6 +8,13 @@
 %global electron_major 41
 %global electron_libdir %{_libdir}/electron%{electron_major}
 %global electron_includedir %{_includedir}/electron%{electron_major}
+# Chromium's individual C++ actions are memory-intensive. Keep the default
+# conservative for a 16 GiB workstation; callers may override this macro.
+%{!?electron_ninja_jobs:%global electron_ninja_jobs 4}
+# electron_dist_zip intentionally excludes split-DWARF .dwo files. Fedora's
+# automatic debuginfo indexer cannot process the bundled runtime libraries
+# without them, so do not emit an incomplete/unusable debuginfo subpackage.
+%global debug_package %{nil}
 
 Name:           electron%{electron_major}
 Version:        41.10.0
@@ -84,6 +91,12 @@ package can coexist with other Electron development packages.
 %patch 0 -p1
 
 %build
+%if 0%{?electron_skip_build}
+# Valid only with an already completed, matching BUILD tree. This makes it
+# possible to run %install/%check/%files without invalidating Ninja outputs:
+# rpmbuild -bb --noprep --noclean --define 'electron_skip_build 1' <spec>
+:
+%else
 cd src
 export CHROMIUM_BUILDTOOLS_PATH="$PWD/buildtools"
 # depot_tools normally puts this bundled GN binary on PATH. The prepared-source
@@ -94,7 +107,8 @@ export PATH="$CHROMIUM_BUILDTOOLS_PATH/linux64:$PATH"
 # otherwise discovers its version from electron/.git; pass the RPM version
 # explicitly, as Electron's source-tarball build path requires.
 "$CHROMIUM_BUILDTOOLS_PATH/linux64/gn" gen out/Release --args='import("//electron/build/args/release.gn") is_component_build=false override_electron_version="%{version}"'
-ninja -C out/Release electron electron:electron_dist_zip electron:node_headers
+ninja -j%{electron_ninja_jobs} -C out/Release electron electron:electron_dist_zip electron:node_headers
+%endif
 
 %install
 cd src
