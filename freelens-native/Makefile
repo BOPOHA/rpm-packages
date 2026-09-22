@@ -11,17 +11,30 @@ RPMLINT_REPORT := rpmlint.report.txt
 # The Electron runtime is an internal, locally built dependency for now. Mock
 # installs these RPMs before resolving BuildRequires, so Electron Builder can
 # use the RPM payload rather than fetching an upstream archive.
-ELECTRON_RPM_DIR ?= /home/user/rpmbuild/RPMS/$(ARCH)
+ELECTRON_RPM_DIR ?= $(HOME)/rpmbuild/RPMS/$(ARCH)
 ELECTRON_RPMS := $(sort $(wildcard $(ELECTRON_RPM_DIR)/electron41-*.rpm))
 
 .PHONY: srpm fc rpmlint clean
+
+define remove_project_tmpdir
+	@project_tmpdir='$(PROJECTTMPDIR)'; \
+	if test -z "$$project_tmpdir"; then \
+		echo 'Refusing to remove an empty PROJECTTMPDIR' >&2; exit 1; \
+	fi; \
+	project_tmpdir="$$(realpath -m -- "$$project_tmpdir")"; \
+	case "$$(basename -- "$$project_tmpdir")" in \
+		'$(PACKAGE_NAME)'|'$(PACKAGE_NAME)-'*) ;; \
+		*) echo "Refusing unsafe PROJECTTMPDIR: $$project_tmpdir" >&2; exit 1 ;; \
+	esac; \
+	rm -rf -- "$$project_tmpdir"
+endef
 
 $(SOURCE):
 	spectool --get-files --directory . $(SPEC)
 
 srpm: $(SOURCE)
-	rm -rf $(PROJECTTMPDIR)
-	mkdir -p $(PROJECTTMPDIR)
+	$(remove_project_tmpdir)
+	mkdir -p "$(PROJECTTMPDIR)"
 	rpmbuild -bs \
 		--define "_sourcedir $(CURDIR)" \
 		--define "_srcrpmdir $(PROJECTTMPDIR)" \
@@ -45,4 +58,5 @@ rpmlint:
 	@echo "rpmlint report: $(RPMLINT_REPORT)"
 
 clean:
-	rm -rf $(PROJECTTMPDIR) rpm-results $(SOURCE)
+	$(remove_project_tmpdir)
+	rm -rf -- rpm-results "$(SOURCE)"

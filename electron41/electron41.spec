@@ -25,6 +25,7 @@ Summary:        Cross-platform desktop runtime based on Chromium and Node.js
 License:        MIT AND LicenseRef-Electron-ThirdParty
 URL:            https://www.electronjs.org/
 Source0:        electron41-source-%{version}.tar.zst
+Source1:        electron41-source-%{version}.tar.zst.sha256
 Patch0:         electron41-library-loader-config.patch
 
 ExclusiveArch:  x86_64
@@ -87,6 +88,9 @@ Headers and build metadata for native Node.js modules targeting Electron
 package can coexist with other Electron development packages.
 
 %prep
+expected_hash="$(awk 'NF >= 2 && $2 == "electron41-source-%{version}.tar.zst" { print $1 }' %{SOURCE1})"
+test -n "$expected_hash"
+printf '%s  %s\n' "$expected_hash" "%{SOURCE0}" | sha256sum -c -
 %setup -q -n electron41-source-%{version}
 %patch 0 -p1
 

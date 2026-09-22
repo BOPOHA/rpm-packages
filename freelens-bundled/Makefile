@@ -9,9 +9,22 @@ RPMLINT_REPORT := rpmlint.report.txt
 
 .PHONY: srpm fc rpmlint clean
 
+define remove_project_tmpdir
+	@project_tmpdir='$(PROJECTTMPDIR)'; \
+	if test -z "$$project_tmpdir"; then \
+		echo 'Refusing to remove an empty PROJECTTMPDIR' >&2; exit 1; \
+	fi; \
+	project_tmpdir="$$(realpath -m -- "$$project_tmpdir")"; \
+	case "$$(basename -- "$$project_tmpdir")" in \
+		'$(PACKAGE_NAME)'|'$(PACKAGE_NAME)-'*) ;; \
+		*) echo "Refusing unsafe PROJECTTMPDIR: $$project_tmpdir" >&2; exit 1 ;; \
+	esac; \
+	rm -rf -- "$$project_tmpdir"
+endef
+
 srpm:
-	rm -rf $(PROJECTTMPDIR)
-	mkdir -p $(PROJECTTMPDIR)
+	$(remove_project_tmpdir)
+	mkdir -p "$(PROJECTTMPDIR)"
 	spectool --get-files --directory $(PROJECTTMPDIR) $(SPEC)
 	rpkg srpm --spec $(SPEC) --outdir $(PROJECTTMPDIR)
 	@echo "SRPM: $(PROJECTTMPDIR)/$(PACKAGE_NAME)-$(RPM_VERSION).src.rpm"
@@ -25,4 +38,5 @@ rpmlint:
 	@echo "rpmlint report: $(RPMLINT_REPORT)"
 
 clean:
-	rm -rf $(PROJECTTMPDIR) rpm-results
+	$(remove_project_tmpdir)
+	rm -rf -- rpm-results

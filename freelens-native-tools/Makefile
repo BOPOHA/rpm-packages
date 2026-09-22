@@ -9,12 +9,25 @@ RPMLINT_REPORT := rpmlint.report.txt
 
 .PHONY: sources srpm fc rpmlint clean
 
+define remove_project_tmpdir
+	@project_tmpdir='$(PROJECTTMPDIR)'; \
+	if test -z "$$project_tmpdir"; then \
+		echo 'Refusing to remove an empty PROJECTTMPDIR' >&2; exit 1; \
+	fi; \
+	project_tmpdir="$$(realpath -m -- "$$project_tmpdir")"; \
+	case "$$(basename -- "$$project_tmpdir")" in \
+		'$(PACKAGE_NAME)'|'$(PACKAGE_NAME)-'*) ;; \
+		*) echo "Refusing unsafe PROJECTTMPDIR: $$project_tmpdir" >&2; exit 1 ;; \
+	esac; \
+	rm -rf -- "$$project_tmpdir"
+endef
+
 sources:
 	spectool --get-files --directory . $(SPEC)
 
 srpm: sources
-	rm -rf $(PROJECTTMPDIR)
-	mkdir -p $(PROJECTTMPDIR)
+	$(remove_project_tmpdir)
+	mkdir -p "$(PROJECTTMPDIR)"
 	rpmbuild -bs \
 		--define "_sourcedir $(CURDIR)" \
 		--define "_srcrpmdir $(PROJECTTMPDIR)" \
@@ -34,6 +47,7 @@ rpmlint:
 	@echo "rpmlint report: $(RPMLINT_REPORT)"
 
 clean:
-	rm -rf $(PROJECTTMPDIR) rpm-results \
+	$(remove_project_tmpdir)
+	rm -rf -- rpm-results \
 		kubectl kubectl.sha256 helm-v*.tar.gz helm-v*.tar.gz.sha256sum \
 		freelens-k8s-proxy freelens-k8s-proxy.sha256 LICENSE.kubernetes LICENSE.freelens-k8s-proxy

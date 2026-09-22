@@ -1,5 +1,10 @@
 # freelens-native-tools RPM packaging
 
+> **Publication scope:** this is a packaging proof of concept only. This
+> repository does not publish or support public `freelens-native-tools` binary
+> RPMs. Public binaries require completed source, license, provenance, and
+> security review.
+
 This package supplies the three version-pinned helper executables used by
 `freelens-native`:
 

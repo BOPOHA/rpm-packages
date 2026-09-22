@@ -3,6 +3,12 @@
 This package provides parallel-installable Electron 41 runtime and development
 RPMs: `electron41` and `electron41-devel`.
 
+> **Publication scope:** this is a packaging proof of concept only. No public
+> Electron source artifact or binary RPM is published or supported by this
+> repository. Public binary distribution remains blocked on the legal,
+> provenance, codec, and security work documented in
+> [PUBLIC_RELEASE_COPR_AUDIT.md](PUBLIC_RELEASE_COPR_AUDIT.md).
+
 Build with:
 
 ```bash
@@ -76,10 +82,16 @@ useful capacity baseline, not a build-time guarantee:
 | Checkout / Git cache / depot_tools | 25 GiB / 28 GiB / 1.0 GiB |
 | Produced `.tar.zst` | 7.6 GiB (`zstd`: 7.51 GiB) |
 
-The artifact is
-`electron41-source-41.10.0.tar.zst`; its SHA-256 is
-`c16ec96639f846e93d590a84f08f78a3fedf3d2c01381426d6b544aa7381c044`.
-The checksum was verified after creation. Its manifest records Electron commit
+The first measured artifact was later refreshed with missing prepared build
+inputs. The canonical artifact used for the successful RPM build is
+`electron41-source-41.10.0.tar.zst`, size 8,085,991,676 bytes, with SHA-256:
+
+```text
+928d25dc4422c56bb43a952b1eef98a2686b4e6e659f401e2e470a3d86fa4778
+```
+
+That digest is committed in
+`electron41-source-41.10.0.tar.zst.sha256`. Its manifest records Electron commit
 `015e7a65b770b8ca81c6adc7645b83b405e7f016`, Chromium commit
 `3a3dae94a80d53bce850c868789fe4ab7fc0b1a7`, and the Chromium release
 `146.0.7680.216` in `GCLIENT-REVINFO.txt`.
@@ -93,10 +105,9 @@ The RPM spec now builds from the prepared archive rather than running
 make build
 ```
 
-`make` verifies `/mnt/artifacts/electron41/electron41-source-41.10.0.tar.zst`
-against its adjacent `.sha256`, then stages a real copy in this package
-directory for SRPM creation (a reflink is used where the filesystem supports
-it). To use a downloaded artifact stored elsewhere, provide its
+`make` verifies the configured artifact against the checksum committed in this
+directory, then stages a real copy for SRPM creation (a reflink is used where
+the filesystem supports it). To use an artifact stored elsewhere, provide its
 local path explicitly:
 
 ```bash
@@ -108,7 +119,8 @@ The current artifact is `linux-x86_64` only, so the RPM deliberately supports
 the Chromium compile; the 95 GiB currently free on this host may be tight.
 The SRPM staging directory defaults to `/mnt/fast/electron41-rpmbuild`, rather
 than `/tmp`, because the SRPM itself embeds the 7.6 GiB archive. Override it
-when needed with `PROJECTTMPDIR=/path/with/space`.
+with a path whose final component is `electron41` or starts with
+`electron41-`; this naming requirement protects destructive cleanup operations.
 
 The prepared x86_64 artifact includes Chromium's Debian amd64 sysroot and
 bundled LLVM toolchain. If an older artifact fails GN/Ninja with a missing

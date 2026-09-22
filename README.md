@@ -4,6 +4,16 @@ This repository contains independent Fedora/COPR RPM package definitions.
 Each package directory owns its spec, build commands, documentation, and build
 results.
 
+> **Publication scope:** `electron41`, `freelens-native`, and
+> `freelens-native-tools` are packaging proofs of concept only. This repository
+> publishes packaging source code, not public binary RPMs or prepared Electron
+> source artifacts. Those packages require additional license, provenance,
+> codec, and security review before public binary distribution.
+
+Repository-authored packaging material is MIT-licensed. Downloaded upstream
+software and generated packages retain their own licenses; see
+[THIRD_PARTY.md](THIRD_PARTY.md).
+
 | Directory | RPMs | Status |
 | --- | --- | --- |
 | [freelens-bundled](freelens-bundled) | `freelens-bundled` | Compatibility package; rebuild pending after layout migration |

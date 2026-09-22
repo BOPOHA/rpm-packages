@@ -1,5 +1,10 @@
 # freelens-native RPM packaging
 
+> **Publication scope:** this is a packaging proof of concept only. This
+> repository does not publish or support public `freelens-native` binary RPMs.
+> Public binaries require the separate Electron and dependency legal/security
+> reviews to be completed first.
+
 `freelens-native` is the thin FreeLens package. It contains the FreeLens
 application and its native Node add-ons, but it does not contain Electron,
 Chromium, or Kubernetes helper tools. It runs with the separately installed
@@ -17,8 +22,8 @@ make fc
 ```
 
 `make fc` installs the locally built `electron41` and `electron41-devel` RPMs
-from `/home/user/rpmbuild/RPMS/x86_64` into the Mock buildroot before the
-build. To use a different location, pass `ELECTRON_RPM_DIR=/path/to/rpms`.
+from `$(HOME)/rpmbuild/RPMS/x86_64` into the Mock buildroot before the build.
+To use a different location, pass `ELECTRON_RPM_DIR=/path/to/rpms`.
 
 The build downloads the pinned upstream source and JavaScript dependencies in
 a Fedora Mock chroot. Electron Builder is used to assemble the application,

@@ -54,15 +54,15 @@ Relevant packaging commits:
 | RPM generation | Pass | Runtime and devel RPMs were generated and verified. |
 | Basic runtime smoke test | Pass | Extracted binary reports `v41.10.0`; no unresolved libraries. |
 | Git artifact hygiene | Pass | Source archive and RPMs are ignored and have never been committed. |
-| Repository licensing | Blocked | No top-level license covers the packaging scripts, spec, Makefiles, and documentation. |
-| Artifact provenance | Blocked | README and ignored working copy refer to older artifact revisions. |
+| Repository licensing | Pass | The top-level MIT license covers repository-authored packaging material; third-party work remains under its upstream terms. |
+| Artifact provenance | Partial | The successful artifact digest is pinned in Git, but the artifact still lacks an immutable public location and complete SBOM/license report. |
 | Publicly reproducible source | Blocked | `Source0` has no immutable public URL and the source artifact is not available from Git. |
 | Package license metadata | Blocked | `LicenseRef-Electron-ThirdParty` is not a valid accepted identifier. |
 | Codec/patent review | Blocked | Current build enables Chrome FFmpeg branding, proprietary codecs, H.264, and HEVC. |
 | Source/binary inventory | Blocked | Prepared archive contains thousands of downloaded or generated binary-like files. |
 | Clean Mock/SRPM build | Not proven | Successful build used a local prepared tree; the complete SRPM-to-Mock path has not passed. |
 | COPR capacity | Needs approval | Powerful builders are the appropriate tier for Chromium/Blink. |
-| Freelens integration | Blocked | Current Freelens package still bundles Electron and performs networked build downloads. |
+| Freelens integration | Pass (PoC) | The tested native package uses `electron41`; its networked JavaScript dependency build is not cleared for public binaries. |
 | Linux aarch64 | Not implemented | Requires a separately prepared native aarch64 artifact and RPM validation. |
 | macOS Apple Silicon | Not implemented | Requires native macOS build, signing, notarization, and separate artifacts. |
 
@@ -81,17 +81,12 @@ Chromium revision: 3a3dae94a80d53bce850c868789fe4ab7fc0b1a7
 depot_tools revision: b6aeae1769e1448cf8b53d0d05c4b125fb5e2c93
 ```
 
-Current provenance inconsistency:
-
-- `~/rpmbuild/SOURCES/electron41-source-41.10.0.tar.zst` is the successful
-  canonical artifact and matches the SHA-256 above.
-- `/mnt/artifacts/electron41/` contains the matching checksum but the archive
-  was moved away.
-- The ignored archive in the repository is older and has a different hash.
-- `README.md` records an older artifact hash.
-
-Before release, restore one immutable canonical artifact/checksum pair and
-update all documentation to match it. For a public-safe codec rebuild, assign a
+The successful artifact digest is committed as
+`electron41-source-41.10.0.tar.zst.sha256`, and both the Makefile and RPM prep
+verify against that repository-controlled value. Local ignored archives with a
+different digest are noncanonical and will be rejected. Before any binary
+release, place the canonical artifact at an immutable source URL and retain its
+manifest and `GCLIENT-REVINFO.txt`. For a public-safe codec rebuild, assign a
 new artifact revision instead of silently replacing this one.
 
 ## Prepared artifact audit
@@ -174,19 +169,17 @@ the current no-debuginfo decision with documentation.
 
 Publishing the packaging-code repository is feasible after these changes:
 
-1. Add a top-level license for original repository content.
-2. Add a short third-party/trademark disclaimer.
-3. Update the Electron README and root package-status table.
-4. Decide whether to commit this audit and
-   `CROSS_PLATFORM_DISTRIBUTION_PLAN.md`.
-5. Resolve the unrelated modified `freelens-bundled/rpmlint.report.txt`.
-6. Keep source archives, SRPMs, RPMs, keys, credentials, and build trees
+1. Keep the top-level license for original repository content.
+2. Keep the third-party/trademark disclaimer current.
+3. Keep the Electron README and root package-status table current.
+4. Keep source archives, SRPMs, RPMs, keys, credentials, and build trees
    ignored.
-7. Repeat secret and large-object history scans before pushing.
+5. Repeat secret and large-object history scans before pushing.
 
 Checks already performed:
 
-- Only 15 files are currently tracked in the full `rpm-packages` repository.
+- The repository history contains only small text files; no historical blob is
+  larger than 1 MiB.
 - No Electron archive or RPM was found in Git history.
 - A basic tracked-file secret-marker scan found no obvious credentials or
   private keys.
@@ -273,8 +266,12 @@ Required legal/compliance outputs:
 
 ## Freelens status
 
-The Electron RPM does not complete the overall Freelens project.
-`freelens-bundled` currently:
+The tested `freelens-native` proof of concept now uses `electron41` and obtains
+its helper executables from `freelens-native-tools`. It still resolves its
+JavaScript dependency tree over the network during the build and neither
+native package is cleared for public binary distribution.
+
+`freelens-bundled` remains a separate compatibility package and currently:
 
 - builds and ships its own Electron runtime;
 - does not depend on `electron41`;
@@ -284,26 +281,20 @@ The Electron RPM does not complete the overall Freelens project.
 - declares x86_64 and aarch64 but invokes an x64 Electron Builder target;
 - requires its own license, source, binary, codec, and trademark review.
 
-To use `electron41` as a dependency, create an unbundled Freelens variant that:
-
-1. packages only the application payload;
-2. launches through `/usr/bin/electron41`;
-3. rebuilds or validates native modules against Electron 41's Node ABI;
-4. removes download-during-build behavior;
-5. packages helper executables independently or builds them from audited
-   source;
-6. tests upgrades and runtime compatibility.
+The native proof of concept packages only the application payload, launches
+through `/usr/bin/electron41`, and separates helper executables. Remaining work
+is to eliminate network dependency resolution, complete license/provenance
+review, and automate native-module and upgrade compatibility testing.
 
 ## Ordered continuation plan
 
 ### Phase 1: repository publication
 
-- [ ] Choose and add a repository license.
-- [ ] Add third-party and trademark disclaimers.
-- [ ] Update stale README artifact metadata.
-- [ ] Commit the audit/plan documents if desired.
-- [ ] Resolve the dirty Freelens report.
-- [ ] Repeat secret and Git-history large-object scans.
+- [x] Choose and add a repository license.
+- [x] Add third-party and trademark disclaimers.
+- [x] Update stale README artifact metadata.
+- [x] Commit the audit/plan documents.
+- [x] Repeat secret and Git-history large-object scans.
 - [ ] Add a real public Git remote and publish the code-only repository.
 
 ### Phase 2: canonical artifact and provenance
@@ -311,7 +302,8 @@ To use `electron41` as a dependency, create an unbundled Freelens variant that:
 - [ ] Restore the successful artifact and checksum as an immutable pair.
 - [ ] Preserve the embedded manifest and `GCLIENT-REVINFO.txt` separately.
 - [ ] Define an S3 object-key/versioning policy.
-- [ ] Add checksum and optional signature verification to the public workflow.
+- [x] Pin and verify the canonical artifact checksum in the repository.
+- [ ] Add artifact signature verification to the public workflow.
 - [ ] Generate SBOM and license-report outputs.
 
 ### Phase 3: Fedora-safe Electron variant
@@ -345,8 +337,8 @@ To use `electron41` as a dependency, create an unbundled Freelens variant that:
 
 ### Phase 6: application and additional platforms
 
-- [ ] Refactor Freelens to use `electron41` or explicitly retain a bundled
-  variant.
+- [x] Add a tested native FreeLens proof of concept using `electron41` while
+  retaining the bundled compatibility variant.
 - [ ] Remove Corepack/pnpm/helper downloads from RPM `%build`.
 - [ ] Produce and validate a native Linux aarch64 artifact and RPM.
 - [ ] Design the macOS Apple Silicon build, signing, and notarization pipeline.
@@ -360,4 +352,3 @@ To use `electron41` as a dependency, create an unbundled Freelens variant that:
 - [Fedora not-allowed licenses](https://docs.fedoraproject.org/en-US/legal/not-allowed-licenses/)
 - [Fedora: What can be packaged](https://docs.fedoraproject.org/en-US/packaging-guidelines/what-can-be-packaged/)
 - [Fedora Chromium spec](https://src.fedoraproject.org/rpms/chromium/raw/rawhide/f/chromium.spec)
-
