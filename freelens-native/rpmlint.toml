@@ -1,0 +1,7 @@
+# These are pinned upstream executables required by FreeLens at runtime. Keep
+# every exception restricted to the exact installed paths.
+Filters = [
+  'freelens-native\.\S+: E: statically-linked-binary /usr/lib64/freelens-native/x64/(freelens-k8s-proxy|helm|kubectl)$',
+  'freelens-native\.\S+: W: position-independent-executable-suggested /usr/lib64/freelens-native/x64/(freelens-k8s-proxy|helm|kubectl)$',
+  'freelens-native\.\S+: E: missing-call-to-setgroups-before-setuid /usr/lib64/freelens-native/app\.asar\.unpacked/node_modules/node-pty/(bin/linux-x64-[^/]+/node-pty\.node|prebuilds/linux-x64/pty\.node)$',
+]

@@ -11,5 +11,4 @@ configuration:
     rpmlint.toml
 checks: 32, packages: 1
 
-freelens-bundled.x86_64: W: binary-or-shlib-calls-gethostbyname /usr/lib64/freelens/freelens
- 1 packages and 0 specfiles checked; 0 errors, 1 warnings, 12 filtered, 0 badness; has taken 22.8 s 
+ 1 packages and 0 specfiles checked; 0 errors, 0 warnings, 11 filtered, 0 badness; has taken 7.6 s 
