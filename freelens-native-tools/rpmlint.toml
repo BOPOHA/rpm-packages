@@ -1,0 +1,5 @@
+# These upstream executables are intentionally prebuilt static Go binaries.
+Filters = [
+  'freelens-native-tools\.\S+: E: statically-linked-binary /usr/lib64/freelens-native/x64/(freelens-k8s-proxy|helm|kubectl)$',
+  'freelens-native-tools\.\S+: W: position-independent-executable-suggested /usr/lib64/freelens-native/x64/(freelens-k8s-proxy|helm|kubectl)$',
+]

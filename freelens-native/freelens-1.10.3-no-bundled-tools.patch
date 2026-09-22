@@ -1,0 +1,28 @@
+diff --git a/freelens/electron-builder.yml b/freelens/electron-builder.yml
+--- a/freelens/electron-builder.yml
++++ b/freelens/electron-builder.yml
+@@ -57,13 +57,6 @@ linux:
+   artifactName: ${productName}-${version}.${arch}.${ext}
+   target:
+     - AppImage
+-  extraResources:
+-    - from: binaries/client/linux/${arch}/kubectl
+-      to: ./${arch}/kubectl
+-    - from: binaries/client/linux/${arch}/freelens-k8s-proxy
+-      to: ./${arch}/freelens-k8s-proxy
+-    - from: binaries/client/linux/${arch}/helm
+-      to: ./${arch}/helm
+   publish: null
+ 
+ appImage:
+diff --git a/freelens/package.json b/freelens/package.json
+--- a/freelens/package.json
++++ b/freelens/package.json
+@@ -28,6 +28,6 @@
+     "build:app:win32": "electron-builder --publish never --win",
+     "build:dev": "NODE_ENV=development webpack --config webpack/webpack.ts --progress",
+-    "build:resources": "pnpm \"/^build:resources:/\"",
++    "build:resources": "pnpm run build:resources:license && pnpm run build:resources:tray",
+     "build:resources:client": "ensure-binaries --package package.json --base-dir binaries/client",
+     "build:resources:license": "generate-license --prod --header license-header.txt --output static/build/license.txt",
+     "build:resources:tray": "generate-tray-icons --output static/build/tray --input @freelensapp/icon/icons/logo-lens.svg --notice-icon @freelensapp/icon/icons/notice.svg --spinner-icon @freelensapp/icon/icons/arrow-spinner.svg --none-color fbfbfb",

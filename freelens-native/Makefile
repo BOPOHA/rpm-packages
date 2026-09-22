@@ -1,12 +1,18 @@
 PACKAGE_NAME := freelens-native
 SPEC := freelens-native.spec
+ARCH := x86_64
 RPM_VERSION := $(shell rpmspec -q --srpm --qf '%{Version}-%{Release}' $(SPEC))
 FEDORA_VERSION := $(shell rpm -E %fedora)
 PROJECTTMPDIR := /tmp/$(PACKAGE_NAME)
-RPM := rpm-results/$(PACKAGE_NAME)-$(RPM_VERSION).x86_64.rpm
+RPM := rpm-results/$(PACKAGE_NAME)-$(RPM_VERSION).$(ARCH).rpm
 SOURCE := freelens-$(shell rpmspec -q --srpm --qf '%{Version}' $(SPEC)).tar.gz
 RPMLINT_CONFIG := rpmlint.toml
 RPMLINT_REPORT := rpmlint.report.txt
+# The Electron runtime is an internal, locally built dependency for now. Mock
+# installs these RPMs before resolving BuildRequires, so Electron Builder can
+# use the RPM payload rather than fetching an upstream archive.
+ELECTRON_RPM_DIR ?= /home/user/rpmbuild/RPMS/$(ARCH)
+ELECTRON_RPMS := $(sort $(wildcard $(ELECTRON_RPM_DIR)/electron41-*.rpm))
 
 .PHONY: srpm fc rpmlint clean
 
@@ -23,9 +29,13 @@ srpm: $(SOURCE)
 	@echo "SRPM: $(PROJECTTMPDIR)/$(PACKAGE_NAME)-$(RPM_VERSION).src.rpm"
 
 fc: srpm
+	@test -n "$(ELECTRON_RPMS)" || (echo "electron41 RPMs not found in $(ELECTRON_RPM_DIR); set ELECTRON_RPM_DIR" >&2; exit 1)
 	mkdir -p rpm-results
 	mock --no-clean --enable-network \
-		-r fedora-$(FEDORA_VERSION)-x86_64 \
+		-r fedora-$(FEDORA_VERSION)-$(ARCH) \
+		--install $(ELECTRON_RPMS)
+	mock --no-clean --enable-network \
+		-r fedora-$(FEDORA_VERSION)-$(ARCH) \
 		--resultdir=rpm-results \
 		$(PROJECTTMPDIR)/$(PACKAGE_NAME)-$(RPM_VERSION).src.rpm
 	$(MAKE) rpmlint

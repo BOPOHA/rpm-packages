@@ -12,7 +12,7 @@
 
 Name:           freelens-native
 Version:        %{upstream_version}
-Release:        1%{?dist}
+Release:        2%{?dist}
 Summary:        Free Kubernetes IDE using the system Electron runtime
 License:        MIT
 URL:            https://freelens.app/
@@ -21,9 +21,11 @@ Source1:        freelens-native.sh
 Source2:        freelens.desktop
 Source3:        freelens.1
 Patch0:         freelens-1.10.3-system-resources-path.patch
+Patch1:         freelens-1.10.3-no-bundled-tools.patch
 
 ExclusiveArch:  x86_64
 BuildRequires:  cpio
+BuildRequires:  electron%{electron_major}-devel
 BuildRequires:  gcc
 BuildRequires:  gcc-c++
 BuildRequires:  make
@@ -33,6 +35,7 @@ BuildRequires:  python3
 BuildRequires:  rpm
 Requires:       electron%{electron_major}%{?_isa} >= %{electron_version}
 Requires:       electron%{electron_major}%{?_isa} < 42
+Requires:       freelens-native-tools%{?_isa}
 Requires:       xdg-utils
 Provides:       freelens = %{version}-%{release}
 Obsoletes:      freelens < %{version}-%{release}
@@ -41,8 +44,9 @@ Conflicts:      freelens-bundled
 %description
 Freelens is a free and open-source Kubernetes IDE. This thin variant uses the
 separately packaged Electron 41 runtime instead of carrying another copy of
-Electron and Chromium. It retains the application JavaScript, native Node
-modules, and upstream Kubernetes helper binaries.
+Electron and Chromium. It retains the application JavaScript and native Node
+modules. Its pinned Kubernetes helper binaries are supplied by the separate
+freelens-native-tools package.
 
 %prep
 %autosetup -p1 -n freelens-%{upstream_version}
@@ -59,21 +63,16 @@ pnpm build:di
 pnpm build
 
 # Electron Builder performs upstream's native-module preparation and creates
-# the canonical app.asar/resource layout. The packaging stage takes only the
-# application resources, never the downloaded Electron/Chromium runtime.
-pnpm build:app dir --x64
+# the canonical app.asar/resource layout. Point it to the versioned Electron
+# RPM payload so it neither downloads nor stages an upstream Electron archive.
+pnpm build:app dir --x64 --config.electronDist=%{_libdir}/electron%{electron_major}
 test -f freelens/dist/linux-unpacked/resources/app.asar
-test -x freelens/dist/linux-unpacked/resources/x64/kubectl
-test -x freelens/dist/linux-unpacked/resources/x64/helm
-test -x freelens/dist/linux-unpacked/resources/x64/freelens-k8s-proxy
 
 %install
 install -d %{buildroot}%{_libdir}/freelens-native
 cp -a freelens/dist/linux-unpacked/resources/app.asar \
     %{buildroot}%{_libdir}/freelens-native/
 cp -a freelens/dist/linux-unpacked/resources/app.asar.unpacked \
-    %{buildroot}%{_libdir}/freelens-native/
-cp -a freelens/dist/linux-unpacked/resources/x64 \
     %{buildroot}%{_libdir}/freelens-native/
 
 # Remove debug sections from the two runtime-loaded node-pty implementations.
@@ -125,5 +124,8 @@ test -f %{buildroot}%{_datadir}/applications/freelens.desktop
 %{_datadir}/metainfo/app.freelens.Freelens.metainfo.xml
 
 %changelog
+* Tue Sep 22 2026 Anatolii Vorona <vorona.tolik@gmail.com> - 1.10.3-2
+- Move the pinned Kubernetes helpers to freelens-native-tools.
+
 * Tue Sep 22 2026 Anatolii Vorona <vorona.tolik@gmail.com> - 1.10.3-1
 - Add thin FreeLens variant using the separately packaged Electron 41 runtime.

@@ -1,9 +1,9 @@
 # freelens-native RPM packaging
 
 `freelens-native` is the thin FreeLens package. It contains the FreeLens
-application, its native Node add-ons, and its pinned Kubernetes helper tools,
-but it does not contain Electron or Chromium. It runs with the separately
-installed `electron41` RPM.
+application and its native Node add-ons, but it does not contain Electron,
+Chromium, or Kubernetes helper tools. It runs with the separately installed
+`electron41` and `freelens-native-tools` RPMs.
 
 FreeLens 1.10.3 pins Electron 41.10.0. The RPM therefore requires Electron
 41.10.0 or newer within major version 41. The packages `freelens-native` and
@@ -16,11 +16,16 @@ command and desktop integration.
 make fc
 ```
 
+`make fc` installs the locally built `electron41` and `electron41-devel` RPMs
+from `/home/user/rpmbuild/RPMS/x86_64` into the Mock buildroot before the
+build. To use a different location, pass `ELECTRON_RPM_DIR=/path/to/rpms`.
+
 The build downloads the pinned upstream source and JavaScript dependencies in
 a Fedora Mock chroot. Electron Builder is used to assemble the application,
-but only `resources/app.asar`, its unpacked native modules, and FreeLens's
-Kubernetes helper programs are copied into the RPM. The downloaded Electron
-runtime is not included.
+but receives the installed Electron 41 RPM payload as its input. It neither
+downloads nor copies Electron; only `resources/app.asar` and its unpacked
+native modules are copied into this RPM. Kubernetes helper programs come from
+the sibling tools RPM.
 
 The result is written under `rpm-results/`. If no other FreeLens variant is
 installed, install it with DNF so the `electron41` dependency is checked:
@@ -36,7 +41,8 @@ sudo dnf swap freelens-bundled rpm-results/freelens-native-*.x86_64.rpm
 ```
 
 This is a proof of concept rather than a fully Fedora-unbundled package. The
-application still carries its JavaScript dependency tree and the upstream
-kubectl, Helm, and Kubernetes proxy executables.
+application still carries its JavaScript dependency tree. The pinned kubectl,
+Helm, and Kubernetes proxy executables are built and updated independently in
+the sibling `freelens-native-tools` package.
 
 Planned payload reductions are tracked in [ROADMAP.md](ROADMAP.md).

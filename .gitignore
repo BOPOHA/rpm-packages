@@ -1,4 +1,12 @@
 */rpm-results/
 electron41/electron41-source-*.tar.zst
 freelens-native/freelens-*.tar.gz
+freelens-native-tools/kubectl
+freelens-native-tools/kubectl.sha256
+freelens-native-tools/helm-v*.tar.gz
+freelens-native-tools/helm-v*.tar.gz.sha256sum
+freelens-native-tools/freelens-k8s-proxy
+freelens-native-tools/freelens-k8s-proxy.sha256
+freelens-native-tools/LICENSE.kubernetes
+freelens-native-tools/LICENSE.freelens-k8s-proxy
 /.idea/
