@@ -4,17 +4,24 @@
 %global debug_package %{nil}
 %global _build_id_links none
 %global upstream_version 1.10.3
+%global upstream_source_sha256 f6e63bb96f9333e0c92f27fbca695a6dfbae06439f3d34da8a0efcb8323cd5c4
+%global proxy_version 1.8.0
+%global proxy_license_sha256 8b80747b4460ced250cda25905c02f2b5d6e64d1c05aa8d7ba727abd726c065e
 
 Name:           freelens-bundled
 Version:        %{upstream_version}
-Release:        6%{?dist}
+Release:        7%{?dist}
 Summary:        Free IDE for Kubernetes with the upstream Electron runtime
-License:        MIT
+# FreeLens and freelens-k8s-proxy are MIT; kubectl and Helm are Apache-2.0.
+# The generated third-party notice and Electron/Chromium notices installed
+# below preserve the licenses of bundled runtime dependencies.
+License:        MIT AND Apache-2.0
 URL:            https://freelens.app/
 # rpkg expands Source0 from the committed repository. Source1 is the pinned
 # upstream GitHub release tag; the Electron application is built inside Mock.
 Source0:        {{{ git_repo_pack }}}
 Source1:        https://github.com/freelensapp/freelens/archive/refs/tags/v%{upstream_version}.tar.gz#/freelens-%{upstream_version}.tar.gz
+Source2:        https://raw.githubusercontent.com/freelensapp/freelens-k8s-proxy/v%{proxy_version}/LICENSE#/LICENSE.freelens-k8s-proxy
 
 # Do not derive ELF dependencies from the bundled Chromium/Electron libraries:
 # they would expose private bundled libraries as RPM capabilities and make the
@@ -51,6 +58,8 @@ uses the upstream Electron runtime and bundles compatible kubectl, Helm, and
 Freelens Kubernetes proxy binaries.
 
 %prep
+printf '%s  %s\n' '%{upstream_source_sha256}' '%{SOURCE1}' | sha256sum -c -
+printf '%s  %s\n' '%{proxy_license_sha256}' '%{SOURCE2}' | sha256sum -c -
 %setup -q -n rpm-packages -a 1
 
 %build
@@ -112,6 +121,12 @@ install -Dm0644 freelens-bundled/freelens.desktop \
     %{buildroot}%{_datadir}/applications/freelens.desktop
 install -Dm0644 freelens-%{upstream_version}/freelens/build/metainfo.xml \
     %{buildroot}%{_datadir}/metainfo/app.freelens.Freelens.metainfo.xml
+install -Dm0644 freelens-%{upstream_version}/LICENSE \
+    %{buildroot}%{_licensedir}/%{name}/LICENSE.freelens
+install -Dm0644 freelens-%{upstream_version}/freelens/static/build/license.txt \
+    %{buildroot}%{_licensedir}/%{name}/THIRD-PARTY-LICENSES.txt
+install -Dm0644 %{SOURCE2} \
+    %{buildroot}%{_licensedir}/%{name}/LICENSE.freelens-k8s-proxy
 for icon in freelens-%{upstream_version}/freelens/build/icons/*.png; do
     size="$(basename "$icon" .png)"
     install -Dm0644 "$icon" \
@@ -133,11 +148,17 @@ done
 test -x %{buildroot}%{_libdir}/freelens/freelens
 test -f %{buildroot}%{_datadir}/applications/freelens.desktop
 test -f %{buildroot}%{_datadir}/metainfo/app.freelens.Freelens.metainfo.xml
+test -s %{buildroot}%{_licensedir}/%{name}/LICENSE.freelens
+test -s %{buildroot}%{_licensedir}/%{name}/THIRD-PARTY-LICENSES.txt
+test -s %{buildroot}%{_licensedir}/%{name}/LICENSE.freelens-k8s-proxy
 
 %files -f %{_builddir}/freelens.files
 %dir %{_libdir}/freelens
 %license %{_libdir}/freelens/LICENSE.electron.txt
 %license %{_libdir}/freelens/LICENSES.chromium.html
+%license %{_licensedir}/%{name}/LICENSE.freelens
+%license %{_licensedir}/%{name}/THIRD-PARTY-LICENSES.txt
+%license %{_licensedir}/%{name}/LICENSE.freelens-k8s-proxy
 %doc freelens-%{upstream_version}/README.md
 %{_bindir}/freelens
 %{_mandir}/man1/freelens.1*
@@ -146,6 +167,10 @@ test -f %{buildroot}%{_datadir}/metainfo/app.freelens.Freelens.metainfo.xml
 %{_datadir}/metainfo/app.freelens.Freelens.metainfo.xml
 
 %changelog
+* Tue Sep 22 2026 Anatolii Vorona <vorona.tolik@gmail.com> - 1.10.3-7
+- Install the FreeLens, generated dependency, and proxy license texts.
+- Account for bundled Apache-2.0 helper binaries in the package license.
+
 * Fri Sep 04 2026 Anatolii Vorona <vorona.tolik@gmail.com> - 1.10.3-6
 - Rename the compatibility package to freelens-bundled.
 - Replace older unqualified freelens packages and conflict with freelens-native.
