@@ -1,0 +1,17 @@
+diff --git a/freelens/electron-builder.yml b/freelens/electron-builder.yml
+--- a/freelens/electron-builder.yml
++++ b/freelens/electron-builder.yml
+@@ -20,6 +20,13 @@
+   ## Source maps and TS build info are only useful when debugging local builds
+   - "!**/*.map"
+   - "!**/*.tsbuildinfo"
++  ## Source, tests, and package documentation are not loaded by the packaged
++  ## application. Keep production artifacts and runtime JavaScript only.
++  - "!**/*.{ts,tsx}"
++  - "!**/*.{test,spec}.{js,cjs,mjs,ts,tsx}"
++  - "!**/{test,tests,__tests__}/**"
++  - "!**/*.md"
++  - "!**/docs/**"
+   ## Monaco is bundled into the renderer by webpack and never required at runtime
+   - "!node_modules/monaco-editor/**"
+   ## node-pty is a N-API (node-addon-api) module, so its bundled prebuilt

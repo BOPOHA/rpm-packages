@@ -12,7 +12,7 @@
 
 Name:           freelens-native
 Version:        %{upstream_version}
-Release:        3%{?dist}
+Release:        4%{?dist}
 Summary:        Free Kubernetes IDE using the system Electron runtime
 License:        MIT
 URL:            https://freelens.app/
@@ -23,6 +23,7 @@ Source3:        freelens.1
 Patch0:         freelens-1.10.3-system-resources-path.patch
 Patch1:         freelens-1.10.3-no-bundled-tools.patch
 Patch2:         freelens-1.10.3-enable-webpack-minification.patch
+Patch3:         freelens-1.10.3-prune-development-files.patch
 
 ExclusiveArch:  x86_64
 BuildRequires:  cpio
@@ -125,6 +126,9 @@ test -f %{buildroot}%{_datadir}/applications/freelens.desktop
 %{_datadir}/metainfo/app.freelens.Freelens.metainfo.xml
 
 %changelog
+* Tue Sep 22 2026 Anatolii Vorona <vorona.tolik@gmail.com> - 1.10.3-4
+- Exclude source, tests, and documentation from the production ASAR.
+
 * Tue Sep 22 2026 Anatolii Vorona <vorona.tolik@gmail.com> - 1.10.3-3
 - Minify production webpack bundles to reduce the application payload.
 
