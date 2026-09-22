@@ -12,7 +12,7 @@
 
 Name:           freelens-native
 Version:        %{upstream_version}
-Release:        6%{?dist}
+Release:        7%{?dist}
 Summary:        Free Kubernetes IDE using the system Electron runtime
 License:        MIT
 URL:            https://freelens.app/
@@ -25,6 +25,7 @@ Patch1:         freelens-1.10.3-no-bundled-tools.patch
 Patch2:         freelens-1.10.3-enable-webpack-minification.patch
 Patch3:         freelens-1.10.3-prune-development-files.patch
 Patch4:         freelens-1.10.3-prune-terminal-fonts.patch
+Patch5:         freelens-1.10.3-prune-runtime-duplicates.patch
 
 ExclusiveArch:  x86_64
 BuildRequires:  cpio
@@ -138,6 +139,9 @@ test -f %{buildroot}%{_datadir}/applications/freelens.desktop
 %{_datadir}/metainfo/app.freelens.Freelens.metainfo.xml
 
 %changelog
+* Tue Sep 22 2026 Anatolii Vorona <vorona.tolik@gmail.com> - 1.10.3-7
+- Exclude non-Linux pnpm prebuilds and redundant browser distribution files.
+
 * Tue Sep 22 2026 Anatolii Vorona <vorona.tolik@gmail.com> - 1.10.3-6
 - Remove optional terminal-font injectables before generating production code.
 

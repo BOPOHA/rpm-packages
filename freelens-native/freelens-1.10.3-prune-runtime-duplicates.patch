@@ -1,0 +1,18 @@
+diff --git a/freelens/electron-builder.yml b/freelens/electron-builder.yml
+--- a/freelens/electron-builder.yml
++++ b/freelens/electron-builder.yml
+@@ -27,6 +27,14 @@
+   - "!**/{test,tests,__tests__}/**"
+   - "!**/*.md"
+   - "!**/docs/**"
++  ## This x86_64 Linux RPM only needs the matching Bare prebuilds used by
++  ## bundled pnpm. Browser UMD distributions are duplicate fallbacks: the
++  ## renderer is webpack-bundled and Node loads each package's CommonJS entry.
++  - "!node_modules/bare-*/prebuilds/!(linux-x64)/**"
++  - "!node_modules/**/umd/**"
++  ## The generated license is AppImage/Flatpak/Snap metadata, not used by the
++  ## electron-builder `dir` target that feeds this RPM.
++  - "!static/build/license.txt"
+   ## Monaco is bundled into the renderer by webpack and never required at runtime
+   - "!node_modules/monaco-editor/**"
+   ## node-pty is a N-API (node-addon-api) module, so its bundled prebuilt
