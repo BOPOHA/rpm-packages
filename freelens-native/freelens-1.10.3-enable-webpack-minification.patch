@@ -1,0 +1,24 @@
+diff --git a/freelens/webpack/main.ts b/freelens/webpack/main.ts
+--- a/freelens/webpack/main.ts
++++ b/freelens/webpack/main.ts
+@@ -20,7 +20,7 @@ const main: webpack.Configuration = {
+     path: buildDir,
+   },
+   optimization: {
+-    minimize: false,
++    minimize: !isDevelopment,
+   },
+   resolve: {
+     extensions: [".json", ".js", ".ts"],
+diff --git a/freelens/webpack/renderer.ts b/freelens/webpack/renderer.ts
+--- a/freelens/webpack/renderer.ts
++++ b/freelens/webpack/renderer.ts
+@@ -57,7 +57,7 @@ const renderer: webpack.Configuration = {
+     return;
+   },
+   optimization: {
+-    minimize: false,
++    minimize: !isDevelopment,
+   },
+   module: {
+     parser: {
