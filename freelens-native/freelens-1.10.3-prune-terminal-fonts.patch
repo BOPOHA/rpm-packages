@@ -1,0 +1,165 @@
+diff --git a/packages/core/src/features/terminal/renderer/fonts/register-injectables.ts b/packages/core/src/features/terminal/renderer/fonts/register-injectables.ts
+--- a/packages/core/src/features/terminal/renderer/fonts/register-injectables.ts
++++ b/packages/core/src/features/terminal/renderer/fonts/register-injectables.ts
+@@ -6,43 +6,16 @@
+  * This replaces the webpack-based auto-registration system.
+  */
+ 
+-import anonymiceProTerminalFontInjectable from "./anonymice-pro.injectable";
+-import blexMonoTerminalFontInjectable from "./blex-mono.injectable";
+-import firaCodeTerminalFontInjectable from "./fira-code.injectable";
+ import terminalFontsInjectable from "./fonts.injectable";
+-import jetbrainsMonoTerminalFontInjectable from "./jetbrains-mono.injectable";
+ import loadTerminalFontInjectable from "./load-font.injectable";
+ import preloadTerminalFontsInjectable from "./preload-fonts.injectable";
+ import redHatMonoTerminalFontInjectable from "./red-hat-mono.injectable";
+ import robotoMonoTerminalFontInjectable from "./roboto-mono.injectable";
+-import sauceCodeProTerminalFontInjectable from "./sauce-code-pro.injectable";
+-import spaceMonoTerminalFontInjectable from "./space-mono.injectable";
+-import ubuntuMonoTerminalFontInjectable from "./ubuntu-mono.injectable";
+ 
+ import type { DiContainerForInjection } from "@ogre-tools/injectable";
+ 
+ export function registerInjectables(di: DiContainerForInjection): void {
+   try {
+-    di.register(anonymiceProTerminalFontInjectable);
+-  } catch (e) {
+-    /* Ignore duplicate registration */
+-  }
+-  try {
+-    di.register(blexMonoTerminalFontInjectable);
+-  } catch (e) {
+-    /* Ignore duplicate registration */
+-  }
+-  try {
+-    di.register(firaCodeTerminalFontInjectable);
+-  } catch (e) {
+-    /* Ignore duplicate registration */
+-  }
+-  try {
+-    di.register(jetbrainsMonoTerminalFontInjectable);
+-  } catch (e) {
+-    /* Ignore duplicate registration */
+-  }
+-  try {
+     di.register(loadTerminalFontInjectable);
+   } catch (e) {
+     /* Ignore duplicate registration */
+@@ -63,23 +36,8 @@ export function registerInjectables(di: DiContainerForInjection): void {
+     /* Ignore duplicate registration */
+   }
+   try {
+-    di.register(sauceCodeProTerminalFontInjectable);
+-  } catch (e) {
+-    /* Ignore duplicate registration */
+-  }
+-  try {
+-    di.register(spaceMonoTerminalFontInjectable);
+-  } catch (e) {
+-    /* Ignore duplicate registration */
+-  }
+-  try {
+     di.register(terminalFontsInjectable);
+   } catch (e) {
+     /* Ignore duplicate registration */
+   }
+-  try {
+-    di.register(ubuntuMonoTerminalFontInjectable);
+-  } catch (e) {
+-    /* Ignore duplicate registration */
+-  }
+ }
+diff --git a/packages/core/src/renderer/components/fonts.scss b/packages/core/src/renderer/components/fonts.scss
+--- a/packages/core/src/renderer/components/fonts.scss
++++ b/packages/core/src/renderer/components/fonts.scss
+@@ -37,38 +37,6 @@
+ 
+ // Terminal fonts
+ @font-face {
+-  font-family: "AnonymicePro";
+-  src: url("../../features/terminal/renderer/fonts/AnonymiceProNerdFont-Regular.ttf")
+-    format("truetype");
+-  font-display: swap;
+-  font-weight: 400; // "normal"
+-}
+-
+-@font-face {
+-  font-family: "BlexMono";
+-  src: url("../../features/terminal/renderer/fonts/BlexMonoNerdFont-Regular.ttf")
+-    format("truetype");
+-  font-display: swap;
+-  font-weight: 400; // "normal"
+-}
+-
+-@font-face {
+-  font-family: "FiraCode";
+-  src: url("../../features/terminal/renderer/fonts/FiraCodeNerdFont-Regular.ttf")
+-    format("truetype");
+-  font-display: swap;
+-  font-weight: 400; // "normal"
+-}
+-
+-@font-face {
+-  font-family: "JetBrainsMono";
+-  src: url("../../features/terminal/renderer/fonts/JetBrainsMonoNerdFont-Regular.ttf")
+-    format("truetype");
+-  font-display: swap;
+-  font-weight: 400; // "normal"
+-}
+-
+-@font-face {
+   font-family: "Red Hat Mono";
+   src: url("../../features/terminal/renderer/fonts/RedHatMono-Regular.ttf")
+     format("truetype");
+@@ -82,30 +50,6 @@
+     format("truetype");
+   font-display: swap;
+   font-weight: 400; // "normal"
+-}
+-
+-@font-face {
+-  font-family: "SauceCodePro";
+-  src: url("../../features/terminal/renderer/fonts/SauceCodeProNerdFont-Regular.ttf")
+-    format("truetype");
+-  font-display: swap;
+-  font-weight: 400; // "normal"
+-}
+-
+-@font-face {
+-  font-family: "SpaceMono";
+-  src: url("../../features/terminal/renderer/fonts/SpaceMonoNerdFont-Regular.ttf")
+-    format("truetype");
+-  font-display: swap;
+-  font-weight: 400; // "normal"
+-}
+-
+-@font-face {
+-  font-family: "UbuntuMono";
+-  src: url("../../features/terminal/renderer/fonts/UbuntuMonoNerdFont-Regular.ttf")
+-    format("truetype");
+-  font-display: swap;
+-  font-weight: 400; // "normal"
+ }
+ 
+ // Icon fonts, see: `icon.tsx`
+diff --git a/freelens/webpack/renderer.ts b/freelens/webpack/renderer.ts
+--- a/freelens/webpack/renderer.ts
++++ b/freelens/webpack/renderer.ts
+@@ -120,6 +120,17 @@ const renderer: webpack.Configuration = {
+             corePackageJson.exports["./fonts"],
+           ),
+           to: "fonts/[name][ext]",
++          globOptions: {
++            ignore: [
++              "**/AnonymiceProNerdFont-Regular.ttf",
++              "**/BlexMonoNerdFont-Regular.ttf",
++              "**/FiraCodeNerdFont-Regular.ttf",
++              "**/JetBrainsMonoNerdFont-Regular.ttf",
++              "**/SauceCodeProNerdFont-Regular.ttf",
++              "**/SpaceMonoNerdFont-Regular.ttf",
++              "**/UbuntuMonoNerdFont-Regular.ttf",
++            ],
++          },
+         },
+       ],
+     }),

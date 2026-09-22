@@ -12,7 +12,7 @@
 
 Name:           freelens-native
 Version:        %{upstream_version}
-Release:        4%{?dist}
+Release:        6%{?dist}
 Summary:        Free Kubernetes IDE using the system Electron runtime
 License:        MIT
 URL:            https://freelens.app/
@@ -24,6 +24,7 @@ Patch0:         freelens-1.10.3-system-resources-path.patch
 Patch1:         freelens-1.10.3-no-bundled-tools.patch
 Patch2:         freelens-1.10.3-enable-webpack-minification.patch
 Patch3:         freelens-1.10.3-prune-development-files.patch
+Patch4:         freelens-1.10.3-prune-terminal-fonts.patch
 
 ExclusiveArch:  x86_64
 BuildRequires:  cpio
@@ -61,6 +62,17 @@ mkdir -p .build-tools/bin
 node .build-tools/node_modules/corepack/dist/corepack.js enable --install-directory "$PWD/.build-tools/bin"
 export PATH="$PWD/.build-tools/bin:$PATH"
 pnpm install --frozen-lockfile
+# Keep only the default Roboto Mono and compact Red Hat terminal fonts. Remove
+# the optional font injectables before generating DI registration, otherwise
+# build:di would restore them and webpack would retain their font assets.
+rm -f \
+    packages/core/src/features/terminal/renderer/fonts/anonymice-pro.injectable.ts \
+    packages/core/src/features/terminal/renderer/fonts/blex-mono.injectable.ts \
+    packages/core/src/features/terminal/renderer/fonts/fira-code.injectable.ts \
+    packages/core/src/features/terminal/renderer/fonts/jetbrains-mono.injectable.ts \
+    packages/core/src/features/terminal/renderer/fonts/sauce-code-pro.injectable.ts \
+    packages/core/src/features/terminal/renderer/fonts/space-mono.injectable.ts \
+    packages/core/src/features/terminal/renderer/fonts/ubuntu-mono.injectable.ts
 pnpm build:di
 pnpm build
 
@@ -126,6 +138,12 @@ test -f %{buildroot}%{_datadir}/applications/freelens.desktop
 %{_datadir}/metainfo/app.freelens.Freelens.metainfo.xml
 
 %changelog
+* Tue Sep 22 2026 Anatolii Vorona <vorona.tolik@gmail.com> - 1.10.3-6
+- Remove optional terminal-font injectables before generating production code.
+
+* Tue Sep 22 2026 Anatolii Vorona <vorona.tolik@gmail.com> - 1.10.3-5
+- Retain only the default and Red Hat terminal fonts.
+
 * Tue Sep 22 2026 Anatolii Vorona <vorona.tolik@gmail.com> - 1.10.3-4
 - Exclude source, tests, and documentation from the production ASAR.
 
