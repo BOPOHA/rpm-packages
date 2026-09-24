@@ -9,14 +9,16 @@
 %global proxy_license_sha256 8b80747b4460ced250cda25905c02f2b5d6e64d1c05aa8d7ba727abd726c065e
 %ifarch x86_64
 %global electron_arch x64
+%global electron_outdir linux-unpacked
 %endif
 %ifarch aarch64
 %global electron_arch arm64
+%global electron_outdir linux-arm64-unpacked
 %endif
 
 Name:           freelens-bundled
 Version:        %{upstream_version}
-Release:        8%{?dist}
+Release:        9%{?dist}
 Summary:        Free IDE for Kubernetes with the upstream Electron runtime
 # FreeLens and freelens-k8s-proxy are MIT; kubectl and Helm are Apache-2.0.
 # The generated third-party notice and Electron/Chromium notices installed
@@ -82,11 +84,11 @@ pnpm install --frozen-lockfile
 pnpm build:di
 pnpm build
 pnpm build:app dir --%{electron_arch}
-test -x freelens/dist/linux-unpacked/freelens
+test -x freelens/dist/%{electron_outdir}/freelens
 
 %install
 install -d %{buildroot}%{_bindir} %{buildroot}%{_libdir}
-cp -a freelens-%{upstream_version}/freelens/dist/linux-unpacked \
+cp -a freelens-%{upstream_version}/freelens/dist/%{electron_outdir} \
     %{buildroot}%{_libdir}/freelens
 
 # This runtime-loaded native module is prebuilt by upstream. Strip its debug
@@ -169,6 +171,9 @@ test -s %{buildroot}%{_licensedir}/%{name}/LICENSE.freelens-k8s-proxy
 %{_datadir}/metainfo/app.freelens.Freelens.metainfo.xml
 
 %changelog
+* Thu Sep 24 2026 Anatolii Vorona <vorona.tolik@gmail.com> - 1.10.3-9
+- Use Electron Builder's architecture-specific output directory on aarch64.
+
 * Thu Sep 24 2026 Anatolii Vorona <vorona.tolik@gmail.com> - 1.10.3-8
 - Build Electron and retain native modules for the target architecture.
 
