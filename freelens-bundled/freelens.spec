@@ -7,10 +7,16 @@
 %global upstream_source_sha256 f6e63bb96f9333e0c92f27fbca695a6dfbae06439f3d34da8a0efcb8323cd5c4
 %global proxy_version 1.8.0
 %global proxy_license_sha256 8b80747b4460ced250cda25905c02f2b5d6e64d1c05aa8d7ba727abd726c065e
+%ifarch x86_64
+%global electron_arch x64
+%endif
+%ifarch aarch64
+%global electron_arch arm64
+%endif
 
 Name:           freelens-bundled
 Version:        %{upstream_version}
-Release:        7%{?dist}
+Release:        8%{?dist}
 Summary:        Free IDE for Kubernetes with the upstream Electron runtime
 # FreeLens and freelens-k8s-proxy are MIT; kubectl and Helm are Apache-2.0.
 # The generated third-party notice and Electron/Chromium notices installed
@@ -75,7 +81,7 @@ export PATH="$PWD/.build-tools/bin:$PATH"
 pnpm install --frozen-lockfile
 pnpm build:di
 pnpm build
-pnpm build:app dir --x64
+pnpm build:app dir --%{electron_arch}
 test -x freelens/dist/linux-unpacked/freelens
 
 %install
@@ -86,8 +92,8 @@ cp -a freelens-%{upstream_version}/freelens/dist/linux-unpacked \
 # This runtime-loaded native module is prebuilt by upstream. Strip its debug
 # sections without changing executable code or its bundled ABI.
 %{__strip} --strip-unneeded \
-    %{buildroot}%{_libdir}/freelens/resources/app.asar.unpacked/node_modules/node-pty/bin/linux-x64-*/node-pty.node \
-    %{buildroot}%{_libdir}/freelens/resources/app.asar.unpacked/node_modules/node-pty/prebuilds/linux-x64/pty.node
+    %{buildroot}%{_libdir}/freelens/resources/app.asar.unpacked/node_modules/node-pty/bin/linux-%{electron_arch}-*/node-pty.node \
+    %{buildroot}%{_libdir}/freelens/resources/app.asar.unpacked/node_modules/node-pty/prebuilds/linux-%{electron_arch}/pty.node
 
 # Electron bundles the Vulkan loader, but Fedora supplies the compatible
 # system loader through the explicit libvulkan.so.1 dependency above.
@@ -96,12 +102,8 @@ rm -f %{buildroot}%{_libdir}/freelens/libvulkan.so.1
 # electron-builder leaves prebuilt extract-zip add-ons for every platform in
 # app.asar.unpacked. Keep only the glibc build for the target architecture.
 extract_zip_dir=%{buildroot}%{_libdir}/freelens/resources/app.asar.unpacked/node_modules/@electron-internal/extract-zip
-%ifarch x86_64
-find "$extract_zip_dir" -type f -name '*.node' ! -name 'index.linux-x64-gnu.node' -delete
-%endif
-%ifarch aarch64
-find "$extract_zip_dir" -type f -name '*.node' ! -name 'index.linux-arm64-gnu.node' -delete
-%endif
+find "$extract_zip_dir" -type f -name '*.node' \
+    ! -name 'index.linux-%{electron_arch}-gnu.node' -delete
 
 # Build-time metadata and Windows-only headers cannot be used by the Linux
 # runtime and should not be carried in the installed application.
@@ -167,6 +169,9 @@ test -s %{buildroot}%{_licensedir}/%{name}/LICENSE.freelens-k8s-proxy
 %{_datadir}/metainfo/app.freelens.Freelens.metainfo.xml
 
 %changelog
+* Thu Sep 24 2026 Anatolii Vorona <vorona.tolik@gmail.com> - 1.10.3-8
+- Build Electron and retain native modules for the target architecture.
+
 * Tue Sep 22 2026 Anatolii Vorona <vorona.tolik@gmail.com> - 1.10.3-7
 - Install the FreeLens, generated dependency, and proxy license texts.
 - Account for bundled Apache-2.0 helper binaries in the package license.
